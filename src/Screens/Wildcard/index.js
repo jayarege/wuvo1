@@ -29,48 +29,98 @@ const BASELINE_COMPLETE_KEY = 'wuvo_baseline_complete';
 const COMPARISON_COUNT_KEY = 'wuvo_comparison_count';
 const COMPARISON_PATTERN_KEY = 'wuvo_comparison_pattern';
 
-// Larger baseline movies set with more popular films
+// Enhanced movie baseline with top movies
 const baselineMovies = [
   { id: 238, title: "The Godfather" },
-  { id: 278, title: "The Shawshank Redemption" },
-  { id: 240, title: "The Godfather Part II" },
   { id: 389, title: "12 Angry Men" },
+  { id: 240, title: "The Godfather: Part II" },
+  { id: 278, title: "The Shawshank Redemption" },
   { id: 346, title: "Seven Samurai" },
   { id: 424, title: "Schindler's List" },
   { id: 680, title: "Pulp Fiction" },
   { id: 429, title: "The Good, the Bad and the Ugly" },
-  { id: 550, title: "Fight Club" },
-  { id: 155, title: "The Dark Knight" },
-  { id: 13, title: "Forrest Gump" },
+  { id: 901, title: "City Lights" },
+  { id: 14537, title: "Harakiri" },
+  { id: 510, title: "One Flew Over the Cuckoo's Nest" },
+  { id: 539, title: "Psycho" },
+  { id: 5915, title: "Modern Times" },
   { id: 122, title: "The Lord of the Rings: The Return of the King" },
   { id: 769, title: "GoodFellas" },
-  { id: 497, title: "The Green Mile" },
-  { id: 637, title: "Life Is Beautiful" },
-  { id: 27205, title: "Inception" },
-  { id: 12477, title: "Grave of the Fireflies" },
-  { id: 11216, title: "The Pianist" },
+  { id: 567, title: "Rear Window" },
+  { id: 155, title: "The Dark Knight" },
+  { id: 637, title: "It's a Wonderful Life" },
+  { id: 496243, title: "Parasite" },
+  { id: 25793, title: "Children of Paradise" },
+  { id: 28, title: "Apocalypse Now" },
+  { id: 950, title: "Sunset Boulevard" },
+  { id: 289, title: "Casablanca" },
+  { id: 18148, title: "Tokyo Story" },
+  { id: 872, title: "Singin' in the Rain" },
+  { id: 32487, title: "Sherlock Jr." },
+  { id: 935, title: "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb" },
+  { id: 975, title: "Paths of Glory" },
+  { id: 1891, title: "Star Wars: The Empire Strikes Back" },
+  { id: 12493, title: "High and Low" },
+  { id: 705, title: "All About Eve" },
+  { id: 595, title: "Metropolis" },
   { id: 120, title: "The Lord of the Rings: The Fellowship of the Ring" },
+  { id: 25051, title: "Le Trou" },
+  { id: 914, title: "The Great Dictator" },
+  { id: 335, title: "Once Upon a Time in the West" },
+  { id: 274, title: "The Silence of the Lambs" },
+  { id: 426, title: "Vertigo" },
+  { id: 311, title: "Once Upon a Time in America" },
+  { id: 548, title: "Rashomon" },
+  { id: 1544, title: "Ran" },
+  { id: 30594, title: "Woman in the Dunes" },
+  { id: 25237, title: "Come and See" },
+  { id: 996, title: "Double Indemnity" },
   { id: 121, title: "The Lord of the Rings: The Two Towers" },
-  { id: 1891, title: "Star Wars: Episode V - The Empire Strikes Back" },
-  { id: 806, title: "Psycho" },
+  { id: 15, title: "Citizen Kane" },
+  { id: 12154, title: "Fanny and Alexander" },
+  { id: 598, title: "City of God" },
+  { id: 349, title: "The Apartment" },
+  { id: 38, title: "Alien" },
   { id: 423, title: "The Pianist" },
   { id: 807, title: "Se7en" },
   { id: 77338, title: "The Intouchables" },
   { id: 37165, title: "The Departed" }, 
-  { id: 829, title: "Casablanca" },
-  { id: 274, title: "The Silence of the Lambs" },
-  { id: 33, title: "Whiplash" },
-  { id: 1585, title: "Raiders of the Lost Ark" },
   { id: 87827, title: "Life of Pi" },
   { id: 8587, title: "The Lion King" },
   { id: 1892, title: "Star Wars" },
   { id: 603, title: "The Matrix" },
   { id: 98, title: "Gladiator" },
-  { id: 14, title: "American Beauty" },
-  { id: 539, title: "Psycho" },
   { id: 857, title: "Saving Private Ryan" },
   { id: 745, title: "The Sixth Sense" },
-  { id: 289, title: "Casablanca" }
+  { id: 299534, title: "Avengers: Endgame" },
+  { id: 19995, title: "Avatar" },
+  { id: 634649, title: "Spider-Man: No Way Home" },
+  { id: 140607, title: "Star Wars: The Force Awakens" },
+  { id: 299536, title: "Avengers: Infinity War" },
+  { id: 24428, title: "The Avengers" },
+  { id: 10138, title: "Iron Man" },
+  { id: 27205, title: "Inception" },
+  { id: 157336, title: "Interstellar" },
+  { id: 324857, title: "Spider-Man: Into the Spider-Verse" },
+  { id: 374463, title: "Wonder Woman" },
+  { id: 284052, title: "Doctor Strange" },
+  { id: 12477, title: "Grave of the Fireflies" },
+  { id: 453395, title: "Doctor Strange in the Multiverse of Madness" },
+  { id: 361743, title: "Top Gun: Maverick" },
+  { id: 505642, title: "Black Panther: Wakanda Forever" },
+  { id: 496243, title: "Parasite" },
+  { id: 13, title: "Forrest Gump" },
+  { id: 497, title: "The Green Mile" },
+  { id: 637, title: "Life Is Beautiful" },
+  { id: 27205, title: "Inception" },
+  { id: 11216, title: "The Pianist" },
+  { id: 718789, title: "Nomadland" },
+  { id: 615457, title: "Nobody" },
+  { id: 530915, title: "1917" },
+  { id: 585245, title: "Dune" },
+  { id: 335977, title: "Indiana Jones and the Dial of Destiny" },
+  { id: 335984, title: "Blade Runner 2049" },
+  { id: 438631, title: "Dune: Part Two" }
 ];
 
 // Remove duplicates from baseline movies
@@ -208,13 +258,17 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     );
     
     if (remainingBaselineMovies.length === 0) {
-      // No more baseline movies, set baseline complete
-      if (!baselineComplete) {
-        setBaselineComplete(true);
-        setShowBaselineCompleteModal(true);
-      }
-      return null;
-    }
+  // No more baseline movies, set baseline complete
+  if (!baselineComplete) {
+    setBaselineComplete(true);
+    setShowBaselineCompleteModal(true);
+    
+    // Important: Reset the comparison pattern when completing the baseline
+    // This ensures we'll start with an unknown movie (pattern 0) after completion
+    setComparisonPattern(0);
+  }
+  return null;
+}
     
     // Get a random movie from the remaining ones
     return remainingBaselineMovies[Math.floor(Math.random() * remainingBaselineMovies.length)];
@@ -332,8 +386,26 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     }
     
     // Add random page (1-10) to get more variety
-    const page = Math.floor(Math.random() * 10) + 1;
-    apiUrl += `&page=${page}`;
+// Occasionally use different sort orders to get variety
+const sortOptions = [
+  'vote_average.desc', 
+  'popularity.desc',
+  'primary_release_date.desc'
+];
+const randomSort = sortOptions[Math.floor(Math.random() * sortOptions.length)];
+apiUrl = apiUrl.replace('vote_average.desc', randomSort);
+
+// Fetch first to get total page count
+const initialResponse = await fetch(apiUrl);
+if (!initialResponse.ok) {
+  throw new Error('Failed to fetch similar movies');
+}
+const initialData = await initialResponse.json();
+const maxPage = Math.min(initialData.total_pages || 1, 20);
+
+// Only fetch another page if we have multiple pages
+const page = maxPage > 1 ? Math.floor(Math.random() * maxPage) + 1 : 1;
+apiUrl += `&page=${page}`;
     
     // Fetch similar movies
     const response = await fetch(apiUrl);
@@ -411,7 +483,11 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     }
     
     // Pick a random movie from the filtered results
-    const randomMovie = filteredResults[Math.floor(Math.random() * filteredResults.length)];
+  // Shuffle the filtered results to avoid always picking the same ones
+const shuffledResults = [...filteredResults].sort(() => 0.5 - Math.random());
+
+// Pick the first one after shuffling
+const randomMovie = shuffledResults[0];
     
     // Format the movie data
     return {
@@ -643,7 +719,7 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     // Apply temp values to actual state
     setSelectedGenre(tempGenre);
     
-    // Only fetch new movie if settings actually changed
+          // Only fetch new movie if settings actually changed
     if (settingsChanged) {
       // Use setTimeout to ensure the modal is completely gone before changing UI state
       setTimeout(() => {
@@ -668,56 +744,75 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     setFilterModalVisible(false);
   }, []);
 
-  // ELO-based rating adjustment function
-  const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
-    // Calculate rating difference factor
-    const winnerRating = winner.userRating;
-    const loserRating = loser.userRating;
-    
-    // ELO algorithm for expected win probability
-    const expectedWinProbability = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 4));
-    
-    // K-factor determines how much ratings can change (smaller = more stable)
-    const kFactor = 0.5; 
-    
-    // Calculate rating adjustment
-    const ratingChange = kFactor * (1 - expectedWinProbability);
-    
-    // Apply the change with a minimum adjustment to ensure ratings move
-    let winnerIncrease = Math.max(0.1, ratingChange);
-    let loserDecrease = Math.max(0.1, ratingChange);
-    
-    // Apply bigger adjustment for upsets (low rated beats high rated)
-    if (winnerRating < loserRating) {
-      winnerIncrease += 0.1;
-    }
-    
-    // Cap adjustments
-    const MAX_RATING_CHANGE = 0.7;
-    winnerIncrease = Math.min(MAX_RATING_CHANGE, winnerIncrease);
-    loserDecrease = Math.min(MAX_RATING_CHANGE, loserDecrease);
-    
-    // Calculate new ratings (clamped between 1-10)
-    const newWinnerRating = Math.min(10, Math.max(1, winnerRating + winnerIncrease));
-    const newLoserRating = Math.min(10, Math.max(1, loserRating - loserDecrease));
-    
-    // Create updated movie objects
-    const updatedWinner = {
-      ...winner,
-      userRating: newWinnerRating,
-      eloRating: newWinnerRating * 10
-    };
-    
-    const updatedLoser = {
-      ...loser,
-      userRating: newLoserRating,
-      eloRating: newLoserRating * 10
-    };
-    
-    // Return formatted for the appropriate movie positions
-    return winnerIsSeenMovie 
-      ? { updatedSeenMovie: updatedWinner, updatedNewMovie: updatedLoser } 
-      : { updatedSeenMovie: updatedLoser, updatedNewMovie: updatedWinner };
+  // Enhanced ELO-based rating adjustment function
+const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
+  // Calculate ratings with existing data
+  const winnerRating = winner.userRating;
+  const loserRating = loser.userRating;
+  
+  // Calculate expected win probability using modified Elo formula
+  // We divide by 4 instead of 400 because our scale is 1-10 not 0-3000
+  const expectedWinProbability = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 4));
+  
+  // Dynamic K-factor: higher for movies with fewer comparisons
+  const winnerK = calculateKFactor(winner.gamesPlayed || 0);
+  const loserK = calculateKFactor(loser.gamesPlayed || 0);
+  
+  // Calculate rating changes
+  // The (1 - expectedWinProbability) is the "surprise factor" - how unexpected was this win?
+  // If the winner was already expected to win, the change will be small
+  const winnerIncrease = Math.max(0.1, winnerK * (1 - expectedWinProbability));
+  const loserDecrease = Math.max(0.1, loserK * (1 - expectedWinProbability));
+  
+  // Apply bigger adjustment for upsets (low rated beats high rated)
+  let adjustedWinnerIncrease = winnerIncrease;
+  let adjustedLoserDecrease = loserDecrease;
+  if (winnerRating < loserRating) {
+    // This is an upset - boost the adjustment
+    adjustedWinnerIncrease *= 1.2; // 20% boost for upset victory
+  }
+  
+  // Cap adjustments to prevent wild swings
+  const MAX_RATING_CHANGE = 0.7;
+  adjustedWinnerIncrease = Math.min(MAX_RATING_CHANGE, adjustedWinnerIncrease);
+  adjustedLoserDecrease = Math.min(MAX_RATING_CHANGE, adjustedLoserDecrease);
+  
+  // Calculate new ratings
+  let newWinnerRating = winnerRating + adjustedWinnerIncrease;
+  let newLoserRating = loserRating - adjustedLoserDecrease;
+  
+  // Clamp between 1-10 and round to nearest tenth
+  newWinnerRating = Math.round(Math.min(10, Math.max(1, newWinnerRating)) * 10) / 10;
+  newLoserRating = Math.round(Math.min(10, Math.max(1, newLoserRating)) * 10) / 10;
+  
+  // Create updated movie objects
+  const updatedWinner = {
+    ...winner,
+    userRating: newWinnerRating,
+    eloRating: newWinnerRating * 10,
+    gamesPlayed: (winner.gamesPlayed || 0) + 1
+  };
+  
+  const updatedLoser = {
+    ...loser,
+    userRating: newLoserRating,
+    eloRating: newLoserRating * 10,
+    gamesPlayed: (loser.gamesPlayed || 0) + 1
+  };
+  
+  // Return objects formatted for the appropriate positions
+  return winnerIsSeenMovie 
+    ? { updatedSeenMovie: updatedWinner, updatedNewMovie: updatedLoser } 
+    : { updatedSeenMovie: updatedLoser, updatedNewMovie: updatedWinner };
+}, []);
+
+  // Helper function to calculate dynamic K-factor based on experience
+  const calculateKFactor = useCallback((gamesPlayed) => {
+    // Use higher K for movies with fewer comparisons
+    if (gamesPlayed < 5) return 40;      // Very new movies (fast learning)
+    if (gamesPlayed < 10) return 30;     // Newer movies
+    if (gamesPlayed < 20) return 20;     // Somewhat established
+    return 10;                           // Well-established ratings (more stable)
   }, []);
 
   // Handle user choosing the seen movie as better
@@ -764,7 +859,10 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
       );
       
       // Add new movie to seen list
-      onAddToSeen(updatedNewMovie);
+      if (!seen.some(m => m.id === updatedNewMovie.id)) {
+  onAddToSeen(updatedNewMovie);
+}
+
       
       // Save the action for potential undo
       setLastAction({
@@ -826,7 +924,10 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
       );
       
       // Add new movie to seen list
-      onAddToSeen(updatedNewMovie);
+      if (!seen.some(m => m.id === updatedNewMovie.id)) {
+  onAddToSeen(updatedNewMovie);
+}
+
       
       // Save the action for potential undo
       setLastAction({

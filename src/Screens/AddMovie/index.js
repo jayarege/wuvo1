@@ -524,25 +524,28 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
       </View>
       
       {/* Suggestions with improved styling */}
-      {showSuggestions && suggestions.length > 0 && (
-        <View style={[
-          styles.suggestionsContainer,
-          { 
-            backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF',
-            borderColor: isDarkMode ? '#6C2BD9' : '#E0E0E0' 
-          }
-        ]}>
-          <ScrollView 
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled={true}
-            style={styles.suggestionsScroll}
-            contentContainerStyle={styles.suggestionsContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {suggestions.map((suggestion, index) => renderSuggestionItem(suggestion, index))}
-          </ScrollView>
-        </View>
-      )}
+{/* Suggestions with improved styling */}
+{showSuggestions && suggestions.length > 0 && (
+  <View style={{ position: 'relative', zIndex: 2 }}>
+    <View style={[
+      styles.suggestionsContainer,
+      { 
+        backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF',
+        borderColor: isDarkMode ? '#6C2BD9' : '#E0E0E0' 
+      }
+    ]}>
+      <ScrollView 
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
+        style={styles.suggestionsScroll}
+        contentContainerStyle={styles.suggestionsContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {suggestions.map((suggestion, index) => renderSuggestionItem(suggestion, index))}
+      </ScrollView>
+    </View>
+  </View>
+)}
 
       {/* Search results or empty state */}
       {error ? (
@@ -761,22 +764,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // Improved suggestion styles
-  suggestionsContainer: {
-    position: 'absolute',
-    top: 120, // Position below search bar and header
-    left: 16,
-    right: 16,
-    borderRadius: 16,
-    maxHeight: 400,
-    borderWidth: 1,
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    overflow: 'hidden',
-  },
+ suggestionsContainer: {
+  position: 'absolute',
+  top: '100%', // Position right at the bottom of parent
+  left: 16,
+  right: 16,
+  borderRadius: 16,
+  maxHeight: 400,
+  borderWidth: 1,
+  zIndex: 100,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 8,
+  elevation: 5,
+  overflow: 'hidden',
+  marginTop: 2, // Small gap between search bar and suggestions
+},
   suggestionsScroll: {
     maxHeight: 400,
   },
