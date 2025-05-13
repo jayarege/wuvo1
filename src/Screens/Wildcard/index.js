@@ -28,99 +28,130 @@ const STORAGE_KEY = 'wuvo_compared_movies';
 const BASELINE_COMPLETE_KEY = 'wuvo_baseline_complete';
 const COMPARISON_COUNT_KEY = 'wuvo_comparison_count';
 const COMPARISON_PATTERN_KEY = 'wuvo_comparison_pattern';
+const SKIPPED_MOVIES_KEY = 'wuvo_skipped_movies';
 
 // Enhanced movie baseline with top movies
 const baselineMovies = [
   { id: 238, title: "The Godfather" },
-  { id: 389, title: "12 Angry Men" },
-  { id: 240, title: "The Godfather: Part II" },
-  { id: 278, title: "The Shawshank Redemption" },
-  { id: 346, title: "Seven Samurai" },
-  { id: 424, title: "Schindler's List" },
-  { id: 680, title: "Pulp Fiction" },
-  { id: 429, title: "The Good, the Bad and the Ugly" },
-  { id: 901, title: "City Lights" },
-  { id: 14537, title: "Harakiri" },
-  { id: 510, title: "One Flew Over the Cuckoo's Nest" },
-  { id: 539, title: "Psycho" },
-  { id: 5915, title: "Modern Times" },
-  { id: 122, title: "The Lord of the Rings: The Return of the King" },
-  { id: 769, title: "GoodFellas" },
-  { id: 567, title: "Rear Window" },
   { id: 155, title: "The Dark Knight" },
-  { id: 637, title: "It's a Wonderful Life" },
-  { id: 496243, title: "Parasite" },
-  { id: 25793, title: "Children of Paradise" },
-  { id: 28, title: "Apocalypse Now" },
-  { id: 950, title: "Sunset Boulevard" },
-  { id: 289, title: "Casablanca" },
-  { id: 18148, title: "Tokyo Story" },
-  { id: 872, title: "Singin' in the Rain" },
-  { id: 32487, title: "Sherlock Jr." },
-  { id: 935, title: "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb" },
-  { id: 975, title: "Paths of Glory" },
-  { id: 1891, title: "Star Wars: The Empire Strikes Back" },
-  { id: 12493, title: "High and Low" },
-  { id: 705, title: "All About Eve" },
-  { id: 595, title: "Metropolis" },
   { id: 120, title: "The Lord of the Rings: The Fellowship of the Ring" },
-  { id: 25051, title: "Le Trou" },
-  { id: 914, title: "The Great Dictator" },
-  { id: 335, title: "Once Upon a Time in the West" },
-  { id: 274, title: "The Silence of the Lambs" },
-  { id: 426, title: "Vertigo" },
-  { id: 311, title: "Once Upon a Time in America" },
-  { id: 548, title: "Rashomon" },
-  { id: 1544, title: "Ran" },
-  { id: 30594, title: "Woman in the Dunes" },
-  { id: 25237, title: "Come and See" },
-  { id: 996, title: "Double Indemnity" },
   { id: 121, title: "The Lord of the Rings: The Two Towers" },
-  { id: 15, title: "Citizen Kane" },
-  { id: 12154, title: "Fanny and Alexander" },
-  { id: 598, title: "City of God" },
-  { id: 349, title: "The Apartment" },
-  { id: 38, title: "Alien" },
-  { id: 423, title: "The Pianist" },
-  { id: 807, title: "Se7en" },
-  { id: 77338, title: "The Intouchables" },
-  { id: 37165, title: "The Departed" }, 
-  { id: 87827, title: "Life of Pi" },
-  { id: 8587, title: "The Lion King" },
-  { id: 1892, title: "Star Wars" },
-  { id: 603, title: "The Matrix" },
-  { id: 98, title: "Gladiator" },
-  { id: 857, title: "Saving Private Ryan" },
-  { id: 745, title: "The Sixth Sense" },
-  { id: 299534, title: "Avengers: Endgame" },
-  { id: 19995, title: "Avatar" },
-  { id: 634649, title: "Spider-Man: No Way Home" },
-  { id: 140607, title: "Star Wars: The Force Awakens" },
-  { id: 299536, title: "Avengers: Infinity War" },
-  { id: 24428, title: "The Avengers" },
-  { id: 10138, title: "Iron Man" },
+  { id: 122, title: "The Lord of the Rings: The Return of the King" },
   { id: 27205, title: "Inception" },
   { id: 157336, title: "Interstellar" },
+  { id: 98, title: "Gladiator" },
+  { id: 37165, title: "The Departed" },
+  { id: 244786, title: "Whiplash" },
+  { id: 1124, title: "The Prestige" },
+  { id: 68718, title: "Django Unchained" },
+  { id: 438631, title: "Dune: Part Two" },
+  { id: 10681, title: "WALL·E" },
+  { id: 77, title: "Memento" },
+  { id: 299536, title: "Avengers: Infinity War" },
   { id: 324857, title: "Spider-Man: Into the Spider-Verse" },
-  { id: 374463, title: "Wonder Woman" },
-  { id: 284052, title: "Doctor Strange" },
-  { id: 12477, title: "Grave of the Fireflies" },
-  { id: 453395, title: "Doctor Strange in the Multiverse of Madness" },
-  { id: 361743, title: "Top Gun: Maverick" },
-  { id: 505642, title: "Black Panther: Wakanda Forever" },
-  { id: 496243, title: "Parasite" },
-  { id: 13, title: "Forrest Gump" },
-  { id: 497, title: "The Green Mile" },
-  { id: 637, title: "Life Is Beautiful" },
-  { id: 27205, title: "Inception" },
-  { id: 11216, title: "The Pianist" },
-  { id: 718789, title: "Nomadland" },
-  { id: 615457, title: "Nobody" },
+  { id: 569094, title: "Spider-Man: Across the Spider-Verse" },
+  { id: 16869, title: "Inglourious Basterds" },
+  { id: 49026, title: "The Dark Knight Rises" },
+  { id: 354912, title: "Coco" },
+  { id: 299534, title: "Avengers: Endgame" },
+  { id: 475557, title: "Joker" },
+  { id: 641, title: "Requiem for a Dream" },
+  { id: 10193, title: "Toy Story 3" },
+  { id: 301528, title: "Toy Story 4" },
+  { id: 38, title: "Eternal Sunshine of the Spotless Mind" },
+  { id: 14160, title: "Up" },
+  { id: 872585, title: "Oppenheimer" },
+  { id: 107, title: "Snatch" },
   { id: 530915, title: "1917" },
-  { id: 585245, title: "Dune" },
-  { id: 335977, title: "Indiana Jones and the Dial of Destiny" },
-  { id: 335984, title: "Blade Runner 2049" },
-  { id: 438631, title: "Dune: Part Two" }
+  { id: 106646, title: "The Wolf of Wall Street" },
+  { id: 556574, title: "Hamilton" },
+  { id: 490132, title: "Green Book" },
+  { id: 272, title: "Batman Begins" },
+  { id: 11324, title: "Shutter Island" },
+  { id: 601434, title: "The Father" },
+  { id: 7491, title: "There Will Be Blood" },
+  { id: 361743, title: "Top Gun: Maverick" },
+  { id: 359724, title: "Ford v Ferrari" },
+  { id: 6977, title: "No Country for Old Men" },
+  { id: 453, title: "A Beautiful Mind" },
+  { id: 24, title: "Kill Bill: Vol. 1" },
+  { id: 146233, title: "Prisoners" },
+  { id: 12, title: "Finding Nemo" },
+  { id: 508439, title: "Klaus" },
+  { id: 752, title: "V for Vendetta" },
+  { id: 150540, title: "Inside Out" },
+  { id: 359940, title: "Three Billboards Outside Ebbing, Missouri" },
+  { id: 640, title: "Catch Me If You Can" },
+  { id: 59440, title: "Warrior" },
+  { id: 12444, title: "Harry Potter and the Deathly Hallows: Part 2" },
+  { id: 2649, title: "Gran Torino" },
+  { id: 70, title: "Million Dollar Baby" },
+  { id: 76341, title: "Mad Max: Fury Road" },
+  { id: 634649, title: "Spider-Man: No Way Home" },
+  { id: 76203, title: "12 Years a Slave" },
+  { id: 120467, title: "The Grand Budapest Hotel" },
+  { id: 324786, title: "Hacksaw Ridge" },
+  { id: 210577, title: "Gone Girl" },
+  { id: 2062, title: "Ratatouille" },
+  { id: 585, title: "Monsters, Inc." },
+  { id: 10191, title: "How to Train Your Dragon" },
+  { id: 263115, title: "Logan" },
+  { id: 227306, title: "Spotlight" },
+  { id: 22, title: "Pirates of the Caribbean: The Curse of the Black Pearl" },
+  { id: 264644, title: "Room" },
+  { id: 4800, title: "Hotel Rwanda" },
+  { id: 80, title: "Before Sunset" },
+  { id: 9806, title: "The Incredibles" },
+  { id: 28178, title: "Hachi: A Dog's Tale" },
+  { id: 96721, title: "Rush" },
+  { id: 5915, title: "Into the Wild" },
+  { id: 50014, title: "The Help" },
+  { id: 9522, title: "Wedding Crashers" },
+  { id: 289, title: "Casablanca" },
+  { id: 872, title: "Singin' in the Rain" },
+  { id: 496243, title: "Parasite" },
+  { id: 637, title: "Life Is Beautiful" },
+  { id: 603, title: "The Matrix" },
+  { id: 550, title: "Fight Club" },
+  { id: 769, title: "Goodfellas" },
+  { id: 680, title: "Pulp Fiction" },
+  { id: 278, title: "The Shawshank Redemption" },
+  { id: 13, title: "Forrest Gump" },
+  { id: 857, title: "Saving Private Ryan" },
+  { id: 597, title: "Titanic" },
+  { id: 497, title: "The Green Mile" },
+  { id: 14, title: "American Beauty" },
+  { id: 745, title: "The Sixth Sense" },
+  { id: 807, title: "L.A. Confidential" },
+  { id: 4995, title: "Boogie Nights" },
+  { id: 627, title: "Trainspotting" },
+  { id: 807, title: "Se7en" },
+  { id: 629, title: "The Usual Suspects" },
+  { id: 500, title: "Reservoir Dogs" },
+  { id: 621, title: "Heat" },
+  { id: 37165, title: "The Truman Show" },
+  { id: 197, title: "Braveheart" },
+  { id: 105, title: "Back to the Future" },
+  { id: 78, title: "Blade Runner" },
+  { id: 679, title: "Aliens" },
+  { id: 562, title: "Die Hard" },
+  { id: 9377, title: "Ferris Bueller's Day Off" },
+  { id: 2108, title: "The Breakfast Club" },
+  { id: 218, title: "The Terminator" },
+  { id: 694, title: "The Shining" },
+  { id: 85, title: "Raiders of the Lost Ark" },
+  { id: 1891, title: "Star Wars: The Empire Strikes Back" },
+  { id: 601, title: "E.T. the Extra-Terrestrial" },
+  { id: 620, title: "Ghostbusters" },
+  { id: 744, title: "Top Gun" },
+  { id: 111, title: "Scarface" },
+  { id: 106, title: "Predator" },
+  { id: 9340, title: "The Goonies" },
+  { id: 235, title: "Stand by Me" },
+  { id: 600, title: "Full Metal Jacket" },
+  { id: 793, title: "Blue Velvet" },
+  { id: 1578, title: "Raging Bull" },
+  { id: 2493, title: "The Princess Bride" }
 ];
 
 // Remove duplicates from baseline movies
@@ -129,25 +160,84 @@ const uniqueBaselineMovies = Array.from(new Set(baselineMovies.map(m => m.id)))
     return baselineMovies.find(m => m.id === id);
   });
 
-// Storage keys for skipped and permanently hidden movies
-const SKIPPED_MOVIES_KEY = 'wuvo_skipped_movies';
+function WildcardScreen({
+  seen = [],
+  setSeen,
+  unseen = [],
+  onAddToSeen,
+  onAddToUnseen,
+  genres = {},
+  isDarkMode
+}) {
 
-function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, genres, isDarkMode }) {
   const [seenMovie, setSeenMovie] = useState(null);
   const [newMovie, setNewMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastAction, setLastAction] = useState(null);
   const [comparedMovies, setComparedMovies] = useState([]);
-  const [skippedMovies, setSkippedMovies] = useState([]); // Movies user has skipped (never show again)
+  const [skippedMovies, setSkippedMovies] = useState([]);
   const [baselineComplete, setBaselineComplete] = useState(false);
   const [showBaselineCompleteModal, setShowBaselineCompleteModal] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState(null);
   const [tempGenre, setTempGenre] = useState(null);
   const [comparisonCount, setComparisonCount] = useState(0);
-  const [comparisonPattern, setComparisonPattern] = useState(0); // 0-4: tracks where we are in the pattern
+  const [comparisonPattern, setComparisonPattern] = useState(0);
   const isLoadingRef = useRef(false);
+  const appReady = useRef(false);
+
+  // Custom reset function for just the Wildcard screen
+  const handleReset = useCallback(async () => {
+    Alert.alert(
+      "Reset Wildcard",
+      "Are you sure you want to reset the wildcard screen? This will clear all comparison data but keep your movie ratings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Reset", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              
+              // Reset all Wildcard-related storage
+              await AsyncStorage.removeItem(STORAGE_KEY);
+              await AsyncStorage.removeItem(BASELINE_COMPLETE_KEY);
+              await AsyncStorage.removeItem(COMPARISON_COUNT_KEY);
+              await AsyncStorage.removeItem(COMPARISON_PATTERN_KEY);
+              await AsyncStorage.removeItem(SKIPPED_MOVIES_KEY);
+              
+              // Reset local state
+              setComparedMovies([]);
+              setSkippedMovies([]);
+              setBaselineComplete(false);
+              setComparisonCount(0);
+              setComparisonPattern(0);
+              setLastAction(null);
+              setSeenMovie(null);
+              setNewMovie(null);
+              setError(null);
+              
+              // Reset the loading flag ref
+              isLoadingRef.current = false;
+              
+              // Fetch a new movie after a short delay
+              setTimeout(() => {
+                fetchRandomMovie();
+              }, 300);
+              
+              console.log("Wildcard state reset successfully");
+            } catch (e) {
+              console.error('Failed to reset wildcard state', e);
+              setError('Failed to reset. Please try again.');
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  }, [fetchRandomMovie]);
 
   // Load compared movies and other state from storage on initial load
   useEffect(() => {
@@ -187,13 +277,34 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
         console.log(`Baseline complete: ${isBaselineComplete}`);
         console.log(`Comparison count: ${countValue}`);
         console.log(`Comparison pattern: ${patternValue}`);
+        
+        // Mark app as ready
+        appReady.current = true;
       } catch (e) {
         console.error('Failed to load stored state', e);
+        appReady.current = true;
       }
     };
     
     loadStoredState();
   }, []);
+
+useEffect(() => {
+  // This will run when the component mounts or when seen/unseen changes
+  if (appReady.current && !loading && isLoadingRef.current === false) {
+    // Reset state if we were in an error or stuck state
+    if (error || (!seenMovie && !newMovie && !loading)) {
+      console.log("Detected a stuck state or error - resetting wildcard");
+      setError(null);
+      setLoading(true);
+      setTimeout(() => {
+        isLoadingRef.current = false;
+        fetchRandomMovie();
+      }, 300);
+    }
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [seen, unseen]);
 
   // Save compared movies to storage whenever they change
   useEffect(() => {
@@ -250,6 +361,22 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     saveComparisonPattern();
   }, [comparisonPattern]);
 
+  // Save skipped movies whenever they change
+  useEffect(() => {
+    const saveSkippedMovies = async () => {
+      try {
+        const jsonValue = JSON.stringify(skippedMovies);
+        await AsyncStorage.setItem(SKIPPED_MOVIES_KEY, jsonValue);
+      } catch (e) {
+        console.error('Failed to save skipped movies', e);
+      }
+    };
+    
+    if (skippedMovies.length > 0) {
+      saveSkippedMovies();
+    }
+  }, [skippedMovies]);
+
   // Get next baseline movie to compare
   const getNextBaselineMovie = useCallback(() => {
     // Find remaining baseline movies (not yet compared)
@@ -258,17 +385,17 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
     );
     
     if (remainingBaselineMovies.length === 0) {
-  // No more baseline movies, set baseline complete
-  if (!baselineComplete) {
-    setBaselineComplete(true);
-    setShowBaselineCompleteModal(true);
-    
-    // Important: Reset the comparison pattern when completing the baseline
-    // This ensures we'll start with an unknown movie (pattern 0) after completion
-    setComparisonPattern(0);
-  }
-  return null;
-}
+      // No more baseline movies, set baseline complete
+      if (!baselineComplete) {
+        setBaselineComplete(true);
+        setShowBaselineCompleteModal(true);
+        
+        // Important: Reset the comparison pattern when completing the baseline
+        // This ensures we'll start with an unknown movie (pattern 0) after completion
+        setComparisonPattern(0);
+      }
+      return null;
+    }
     
     // Get a random movie from the remaining ones
     return remainingBaselineMovies[Math.floor(Math.random() * remainingBaselineMovies.length)];
@@ -385,27 +512,26 @@ function WildcardScreen({ seen, setSeen, unseen, onAddToSeen, onAddToUnseen, gen
       apiUrl += `&with_genres=${selectedGenre}`;
     }
     
-    // Add random page (1-10) to get more variety
-// Occasionally use different sort orders to get variety
-const sortOptions = [
-  'vote_average.desc', 
-  'popularity.desc',
-  'primary_release_date.desc'
-];
-const randomSort = sortOptions[Math.floor(Math.random() * sortOptions.length)];
-apiUrl = apiUrl.replace('vote_average.desc', randomSort);
+    // Occasionally use different sort orders to get variety
+    const sortOptions = [
+      'vote_average.desc', 
+      'popularity.desc',
+      'primary_release_date.desc'
+    ];
+    const randomSort = sortOptions[Math.floor(Math.random() * sortOptions.length)];
+    apiUrl = apiUrl.replace('vote_average.desc', randomSort);
 
-// Fetch first to get total page count
-const initialResponse = await fetch(apiUrl);
-if (!initialResponse.ok) {
-  throw new Error('Failed to fetch similar movies');
-}
-const initialData = await initialResponse.json();
-const maxPage = Math.min(initialData.total_pages || 1, 20);
+    // Fetch first to get total page count
+    const initialResponse = await fetch(apiUrl);
+    if (!initialResponse.ok) {
+      throw new Error('Failed to fetch similar movies');
+    }
+    const initialData = await initialResponse.json();
+    const maxPage = Math.min(initialData.total_pages || 1, 20);
 
-// Only fetch another page if we have multiple pages
-const page = maxPage > 1 ? Math.floor(Math.random() * maxPage) + 1 : 1;
-apiUrl += `&page=${page}`;
+    // Only fetch another page if we have multiple pages
+    const page = maxPage > 1 ? Math.floor(Math.random() * maxPage) + 1 : 1;
+    apiUrl += `&page=${page}`;
     
     // Fetch similar movies
     const response = await fetch(apiUrl);
@@ -431,6 +557,9 @@ apiUrl += `&page=${page}`;
     
     // Add all movies we've already compared
     comparedMovies.forEach(id => excludedIds.add(id));
+    
+    // Add all movies we've skipped
+    skippedMovies.forEach(id => excludedIds.add(id));
     
     // Filter out movies already seen, in watchlist, already compared, or without posters
     const filteredResults = data.results.filter(
@@ -482,12 +611,11 @@ apiUrl += `&page=${page}`;
       };
     }
     
-    // Pick a random movie from the filtered results
-  // Shuffle the filtered results to avoid always picking the same ones
-const shuffledResults = [...filteredResults].sort(() => 0.5 - Math.random());
+    // Shuffle the filtered results to avoid always picking the same ones
+    const shuffledResults = [...filteredResults].sort(() => 0.5 - Math.random());
 
-// Pick the first one after shuffling
-const randomMovie = shuffledResults[0];
+    // Pick the first one after shuffling
+    const randomMovie = shuffledResults[0];
     
     // Format the movie data
     return {
@@ -503,7 +631,7 @@ const randomMovie = shuffledResults[0];
       eloRating: randomMovie.vote_average * 10,
       userRating: randomMovie.vote_average
     };
-  }, [seen, unseen, selectedGenre, comparedMovies]);
+  }, [seen, unseen, selectedGenre, comparedMovies, skippedMovies]);
 
   // Get a pair of known movies for comparison (occasionally)
   const getKnownVsKnownPair = useCallback(async () => {
@@ -669,19 +797,17 @@ const randomMovie = shuffledResults[0];
       isLoadingRef.current = false;
     }
   }, [
-    seen, 
-    unseen, 
-    selectedGenre, 
-    genres, 
-    baselineComplete,
-    comparedMovies,
-    comparisonPattern,
-    getNextBaselineMovie,
-    getMovieDetails, 
-    getSimilarMovie,
-    getKnownVsKnownPair,
-    uniqueBaselineMovies
-  ]);
+  seen, 
+  selectedGenre, 
+  genres, 
+  baselineComplete,
+  comparedMovies,
+  comparisonPattern,
+  getNextBaselineMovie,
+  getMovieDetails, 
+  getSimilarMovie,
+  getKnownVsKnownPair
+]);
 
   // Initial fetch on component mount
   useEffect(() => {
@@ -719,7 +845,7 @@ const randomMovie = shuffledResults[0];
     // Apply temp values to actual state
     setSelectedGenre(tempGenre);
     
-          // Only fetch new movie if settings actually changed
+    // Only fetch new movie if settings actually changed
     if (settingsChanged) {
       // Use setTimeout to ensure the modal is completely gone before changing UI state
       setTimeout(() => {
@@ -744,7 +870,16 @@ const randomMovie = shuffledResults[0];
     setFilterModalVisible(false);
   }, []);
 
-  // Enhanced ELO-based rating adjustment function
+ // Helper function to calculate dynamic K-factor based on experience
+const calculateKFactor = useCallback((gamesPlayed) => {
+  // Use higher K for movies with fewer comparisons
+  if (gamesPlayed < 5) return 40;      // Very new movies (fast learning)
+  if (gamesPlayed < 10) return 30;     // Newer movies
+  if (gamesPlayed < 20) return 20;     // Somewhat established
+  return 10;                           // Well-established ratings (more stable)
+}, []);
+
+// Enhanced ELO-based rating adjustment function
 const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
   // Calculate ratings with existing data
   const winnerRating = winner.userRating;
@@ -804,17 +939,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
   return winnerIsSeenMovie 
     ? { updatedSeenMovie: updatedWinner, updatedNewMovie: updatedLoser } 
     : { updatedSeenMovie: updatedLoser, updatedNewMovie: updatedWinner };
-}, []);
-
-  // Helper function to calculate dynamic K-factor based on experience
-  const calculateKFactor = useCallback((gamesPlayed) => {
-    // Use higher K for movies with fewer comparisons
-    if (gamesPlayed < 5) return 40;      // Very new movies (fast learning)
-    if (gamesPlayed < 10) return 30;     // Newer movies
-    if (gamesPlayed < 20) return 20;     // Somewhat established
-    return 10;                           // Well-established ratings (more stable)
-  }, []);
-
+}, [calculateKFactor]);
   // Handle user choosing the seen movie as better
   const handleSeenWin = useCallback(() => {
     if (isLoadingRef.current || !seenMovie || !newMovie) {
@@ -823,7 +948,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     }
     
     // Check if this is a known vs known comparison
-    const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+    const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
     
     if (isKnownVsKnown) {
       // For known vs known, just adjust the ratings directly in the seen list
@@ -858,11 +983,10 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
         m.id === seenMovie.id ? updatedSeenMovie : m
       );
       
-      // Add new movie to seen list
+      // Add new movie to seen list if not already there
       if (!seen.some(m => m.id === updatedNewMovie.id)) {
-  onAddToSeen(updatedNewMovie);
-}
-
+        onAddToSeen(updatedNewMovie);
+      }
       
       // Save the action for potential undo
       setLastAction({
@@ -888,7 +1012,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     }
     
     // Check if this is a known vs known comparison
-    const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+    const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
     
     if (isKnownVsKnown) {
       // For known vs known, just adjust the ratings directly in the seen list
@@ -923,11 +1047,10 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
         m.id === seenMovie.id ? updatedSeenMovie : m
       );
       
-      // Add new movie to seen list
+      // Add new movie to seen list if not already there
       if (!seen.some(m => m.id === updatedNewMovie.id)) {
-  onAddToSeen(updatedNewMovie);
-}
-
+        onAddToSeen(updatedNewMovie);
+      }
       
       // Save the action for potential undo
       setLastAction({
@@ -953,7 +1076,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     }
     
     // Check if this is a known vs known comparison
-    const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+    const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
     
     if (isKnownVsKnown) {
       // Cannot mark a known movie as unseen, show an alert
@@ -969,6 +1092,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     markMovieAsCompared(newMovie.id);
     
     // Add to watchlist
+    markMovieAsCompared(newMovie.id);
     onAddToUnseen(newMovie);
     
     // Save action for undo
@@ -1019,7 +1143,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     }
     
     // Check if this is a known vs known comparison
-    const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+    const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
     
     if (isKnownVsKnown) {
       // For known vs known, calculate the average rating and apply to both
@@ -1128,7 +1252,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
   }, [seenMovie, newMovie, seen, setSeen, fetchRandomMovie, markMovieAsCompared, comparisonPattern, onAddToSeen]);
 
   // Handle undo last action
-  const handleUndo = useCallback(() => {
+  const handleUndo = () => {
     if (!lastAction || isLoadingRef.current) return;
     
     let filteredSeen;
@@ -1262,7 +1386,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     
     // Clear the last action
     setLastAction(null);
-  }, [lastAction, seen, unseen, setSeen, onAddToUnseen]);
+  };
 
   const handleRetry = useCallback(() => {
     setError(null);
@@ -1329,7 +1453,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
   if (!seenMovie || !newMovie) return null;
 
   // Check if this is a known vs known comparison
-  const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+  const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
 
   // Main UI
   return (
@@ -1371,6 +1495,13 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
               <View style={styles.filterBadge} />
             )}
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleReset}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="refresh" size={24} color={isDarkMode ? '#FFD700' : '#4B0082'} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -1404,7 +1535,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
                   Your rating: {seenMovie.userRating.toFixed(1)}
                 </Text>
                 <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                  {seenMovie.genre_ids.map(id => genres[id] || 'Unknown').join(', ')}
+                  {(seenMovie.genre_ids || seenMovie.genreIds || []).map(id => genres[id] || 'Unknown').join(', ')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1434,14 +1565,17 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
                 >
                   {newMovie.title}
                 </Text>
-                <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
-                  {isKnownVsKnown ? 
-                    `Your rating: ${newMovie.userRating.toFixed(1)}` : 
-                    `TMDb: ${newMovie.score.toFixed(1)} (${newMovie.voteCount} votes)`
-                  }
-                </Text>
+                {isKnownVsKnown || seen.some(m => m.id === newMovie.id) ? (
+                  <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
+                    Your rating: {newMovie.userRating.toFixed(1)}
+                  </Text>
+                ) : (
+                  <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
+                    TMDb: {newMovie.score.toFixed(1)} ({newMovie.voteCount} votes)
+                  </Text>
+                )}
                 <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                  {newMovie.genre_ids.map(id => genres[id] || 'Unknown').join(', ')}
+                  {(newMovie.genre_ids || newMovie.genreIds || []).map(id => genres[id] || 'Unknown').join(', ')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1459,7 +1593,7 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
             </TouchableOpacity>
             
             {/* Only show "Add to watchlist" if this isn't a Known vs Known comparison */}
-            {!isKnownVsKnown && (
+            {!isKnownVsKnown && !seen.some(m => m.id === newMovie.id) && (
               <TouchableOpacity
                 style={[compareStyles.unseenButton, { backgroundColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
                 onPress={handleUnseen}
@@ -1702,20 +1836,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     zIndex: 1001,
   },
-  infoSection: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 24,
-  },
-  infoText: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  infoSubtext: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
   filterSection: {
     marginBottom: 20,
   },
@@ -1813,5 +1933,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   }
 });
-
+WildcardScreen.defaultProps = {
+  seen: [],
+  unseen: [],
+  genres: {}
+};
 export default WildcardScreen;

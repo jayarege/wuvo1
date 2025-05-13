@@ -258,8 +258,8 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
                     {displayRating(movie)}
                   </Text>
                   <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                    Genres: {movie.genre_ids.map(id => genres[id] || 'Unknown').join(', ')}
-                  </Text>
+  Genres: {movie.genre_ids && Array.isArray(movie.genre_ids) ? movie.genre_ids.map(id => (genres && genres[id]) || 'Unknown').join(', ') : 'Unknown'}
+</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.editButton}

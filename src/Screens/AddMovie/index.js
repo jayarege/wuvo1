@@ -54,6 +54,7 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
     setSuggestionLoading(true);
     
     try {
+      // TMDB API already filters adult content with the include_adult=false parameter
       const response = await fetch(
         `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(query)}&page=1&include_adult=false`
       );
@@ -66,30 +67,35 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
       
       if (data.results && data.results.length > 0) {
         // Process results
-        const seenIds = new Set(); // Track already seen IDs
-        const processedResults = data.results
+        const filteredResults = data.results
           .filter(movie => {
-            // Remove movies without posters
-            if (!movie.poster_path) return false;
-            
-            // Remove duplicates
-            if (seenIds.has(movie.id)) return false;
-            seenIds.add(movie.id);
-            
-            return true;
+            // Only keep movies with posters
+            return movie.poster_path != null;
           })
-          .map(movie => ({
-            id: movie.id,
-            title: movie.title,
-            score: movie.vote_average,
-            voteCount: movie.vote_count || 0,
-            poster: movie.poster_path,
-            release_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-            overview: movie.overview || "",
-            alreadyRated: seen.some(m => m.id === movie.id),
-            inWatchlist: unseen.some(m => m.id === movie.id)
-          }))
-          .slice(0, 3); // Limit to top 6 for better UI
+          // Sort by popularity (vote_count) descending
+          .sort((a, b) => {
+            // Primary sort by vote_count (most votes first)
+            if (b.vote_count !== a.vote_count) {
+              return b.vote_count - a.vote_count;
+            }
+            // Secondary sort by vote_average (highest rating first)
+            return b.vote_average - a.vote_average;
+          })
+          .slice(0, 3); // Limit to top 3 for better UI
+
+        // Map to our data structure
+        const processedResults = filteredResults.map(movie => ({
+          id: movie.id,
+          title: movie.title,
+          score: movie.vote_average,
+          voteCount: movie.vote_count || 0,
+          poster: movie.poster_path,
+          release_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+          overview: movie.overview || "",
+          alreadyRated: seen.some(sm => sm.id === movie.id),
+          inWatchlist: unseen.some(um => um.id === movie.id),
+          currentRating: seen.find(sm => sm.id === movie.id)?.userRating
+        }));
         
         setSuggestions(processedResults);
         setShowSuggestions(true);
@@ -217,7 +223,8 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
   // Open rating modal
   const openRatingModal = useCallback((movie) => {
     setSelectedMovie(movie);
-    setSelectedRating('');
+    // Initialize with current rating if already rated
+    setSelectedRating(movie.alreadyRated ? movie.currentRating.toString() : '');
     setRatingModalVisible(true);
   }, []);
 
@@ -241,23 +248,44 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
     // Ensure one decimal place
     rating = Math.round(rating * 10) / 10;
     
-    // Create new movie with rating
-    const newMovie = {
-      ...selectedMovie,
-      userRating: rating,
-      eloRating: rating * 10,
-      comparisonHistory: [],
-      comparisonWins: 0,
-    };
+    // Check if it's an update to an existing movie or a new one
+    const isUpdate = seen.some(movie => movie.id === selectedMovie.id);
     
-    // Add to seen list
-    onAddToSeen(newMovie);
+    if (isUpdate) {
+      // Update existing movie - find the movie in seen list and update it
+      const updatedSeenMovies = seen.map(movie => 
+        movie.id === selectedMovie.id 
+          ? { ...movie, userRating: rating, eloRating: rating * 10 } 
+          : movie
+      );
+      
+      // Update the seen list 
+      onAddToSeen(updatedSeenMovies);
+    } else {
+      // Create new movie with rating
+      const newMovie = {
+        ...selectedMovie,
+        userRating: rating,
+        eloRating: rating * 10,
+        comparisonHistory: [],
+        comparisonWins: 0,
+      };
+      
+      // Add to seen list
+      onAddToSeen(newMovie);
+      
+      // If movie was in watchlist, remove it
+      if (unseen.some(movie => movie.id === selectedMovie.id)) {
+        const filteredUnseen = unseen.filter(m => m.id !== selectedMovie.id);
+        onAddToUnseen(filteredUnseen);
+      }
+    }
     
     // Update local results
     setSearchResults(prev => 
       prev.map(m => 
         m.id === selectedMovie.id 
-          ? { ...m, alreadyRated: true, currentRating: rating } 
+          ? { ...m, alreadyRated: true, currentRating: rating, inWatchlist: false } 
           : m
       )
     );
@@ -265,10 +293,32 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
     // Close modal
     setRatingModalVisible(false);
     setSelectedMovie(null);
-  }, [selectedMovie, selectedRating, onAddToSeen]);
+  }, [selectedMovie, selectedRating, onAddToSeen, onAddToUnseen, seen, unseen]);
 
   // Add movie to watchlist
   const addToUnseen = useCallback((movie) => {
+    // Don't add if it's already rated
+    if (seen.some(m => m.id === movie.id)) {
+      return;
+    }
+    
+    // Check if it's already in watchlist
+    if (movie.inWatchlist) {
+      // Remove from watchlist instead
+      const filteredUnseen = unseen.filter(m => m.id !== movie.id);
+      onAddToUnseen(filteredUnseen);
+      
+      // Update local results
+      setSearchResults(prev => 
+        prev.map(m => 
+          m.id === movie.id 
+            ? { ...m, inWatchlist: false } 
+            : m
+        )
+      );
+      return;
+    }
+    
     onAddToUnseen(movie);
     
     // Update local results
@@ -279,7 +329,7 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
           : m
       )
     );
-  }, [onAddToUnseen]);
+  }, [onAddToUnseen, seen, unseen]);
 
   // Get poster URL
   const getPosterUrl = useCallback(path => {
@@ -328,9 +378,21 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
         </Text>
         
         {item.alreadyRated && (
-          <Text style={{ color: isDarkMode ? '#72B01D' : '#4CAF50', marginTop: 4, fontWeight: 'bold' }}>
-            Your rating: {item.currentRating.toFixed(1)}
-          </Text>
+          <View style={styles.ratingContainer}>
+            <Text style={{ color: isDarkMode ? '#72B01D' : '#4CAF50', marginRight: 10, fontWeight: 'bold' }}>
+              Your rating: {item.currentRating.toFixed(1)}
+            </Text>
+            
+            {/* Add a reranking option for already rated movies */}
+            <TouchableOpacity
+              style={[styles.reRankButton, { backgroundColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
+              onPress={() => openRatingModal(item)}
+            >
+              <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
+                Update Rating
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
         
         <View style={styles.buttonContainer}>
@@ -345,29 +407,23 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
             </TouchableOpacity>
           )}
           
-          {!item.alreadyRated && !item.inWatchlist && (
-            <TouchableOpacity
-              style={[styles.watchlistButton, { borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
-              onPress={() => addToUnseen(item)}
-            >
-              <Text style={[styles.buttonText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                Add to Watchlist
-              </Text>
-            </TouchableOpacity>
-          )}
-          
-          {item.inWatchlist && (
-            <View
-              style={[styles.inWatchlistIndicator, { 
-                borderColor: isDarkMode ? '#72B01D' : '#4CAF50',
-                backgroundColor: isDarkMode ? '#1C2526' : '#F5F5F5'
-              }]}
-            >
-              <Text style={{ color: isDarkMode ? '#72B01D' : '#4CAF50' }}>
-                In Watchlist
-              </Text>
-            </View>
-          )}
+          {/* Always show the watchlist button, but change its appearance based on state */}
+          <TouchableOpacity
+            style={[
+              styles.watchlistButton, 
+              { 
+                borderColor: isDarkMode ? '#8A2BE2' : '#4B0082',
+                backgroundColor: item.inWatchlist ? 
+                  (isDarkMode ? 'rgba(114, 176, 29, 0.2)' : 'rgba(76, 175, 80, 0.1)') : 
+                  'transparent'
+              }
+            ]}
+            onPress={() => addToUnseen(item)}
+          >
+            <Text style={[styles.buttonText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
+              {item.inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -524,28 +580,27 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
       </View>
       
       {/* Suggestions with improved styling */}
-{/* Suggestions with improved styling */}
-{showSuggestions && suggestions.length > 0 && (
-  <View style={{ position: 'relative', zIndex: 2 }}>
-    <View style={[
-      styles.suggestionsContainer,
-      { 
-        backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF',
-        borderColor: isDarkMode ? '#6C2BD9' : '#E0E0E0' 
-      }
-    ]}>
-      <ScrollView 
-        keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled={true}
-        style={styles.suggestionsScroll}
-        contentContainerStyle={styles.suggestionsContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {suggestions.map((suggestion, index) => renderSuggestionItem(suggestion, index))}
-      </ScrollView>
-    </View>
-  </View>
-)}
+      {showSuggestions && suggestions.length > 0 && (
+        <View style={{ position: 'relative', zIndex: 2 }}>
+          <View style={[
+            styles.suggestionsContainer,
+            { 
+              backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF',
+              borderColor: isDarkMode ? '#6C2BD9' : '#E0E0E0' 
+            }
+          ]}>
+            <ScrollView 
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}
+              style={styles.suggestionsScroll}
+              contentContainerStyle={styles.suggestionsContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {suggestions.map((suggestion, index) => renderSuggestionItem(suggestion, index))}
+            </ScrollView>
+          </View>
+        </View>
+      )}
 
       {/* Search results or empty state */}
       {error ? (
@@ -697,7 +752,7 @@ function AddMovieScreen({ seen, unseen, onAddToSeen, onAddToUnseen, genres, isDa
                     modalStyles.modalButtonText,
                     { color: isDarkMode ? '#1C2526' : '#FFFFFF' }
                   ]}>
-                    Rate Movie
+                    {selectedMovie.alreadyRated ? 'Update Rating' : 'Rate Movie'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -764,23 +819,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   // Improved suggestion styles
- suggestionsContainer: {
-  position: 'absolute',
-  top: '100%', // Position right at the bottom of parent
-  left: 16,
-  right: 16,
-  borderRadius: 16,
-  maxHeight: 400,
-  borderWidth: 1,
-  zIndex: 100,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 8,
-  elevation: 5,
-  overflow: 'hidden',
-  marginTop: 2, // Small gap between search bar and suggestions
-},
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%', // Position right at the bottom of parent
+    left: 16,
+    right: 16,
+    borderRadius: 16,
+    maxHeight: 400,
+    borderWidth: 1,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+    marginTop: 2, // Small gap between search bar and suggestions
+  },
   suggestionsScroll: {
     maxHeight: 400,
   },
@@ -876,6 +931,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     marginBottom: 10,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  reRankButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    alignItems: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',

@@ -11,7 +11,19 @@ import WildcardScreen from '../Screens/Wildcard';
 
 const Tab = createBottomTabNavigator();
 
-function TabNavigator({ seen, unseen, setSeen, setUnseen, genres, isDarkMode, toggleTheme }) {
+function TabNavigator({ 
+  seen, 
+  unseen, 
+  setSeen, 
+  setUnseen, 
+  genres, 
+  isDarkMode, 
+  toggleTheme,
+  skippedMovies = [], 
+  addToSkippedMovies = () => {}, 
+  removeFromSkippedMovies = () => {},
+  newReleases = [] 
+}) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -47,47 +59,44 @@ function TabNavigator({ seen, unseen, setSeen, setUnseen, genres, isDarkMode, to
             unseen={unseen}
             onAddToSeen={(newMovie) => {
               console.log("Adding to seen from Home:", newMovie.title);
-              setSeen([...seen, newMovie]);
+              // Check for duplicates
+              if (!seen.some(movie => movie.id === newMovie.id)) {
+                setSeen([...seen, newMovie]);
+              }
             }}
             onAddToUnseen={(newMovie) => {
               console.log("Adding to watchlist from Home:", newMovie.title);
-              setUnseen([...unseen, newMovie]);
+              // Check for duplicates
+              if (!unseen.some(movie => movie.id === newMovie.id)) {
+                setUnseen([...unseen, newMovie]);
+              }
             }}
             genres={genres}
             isDarkMode={isDarkMode}
             toggleTheme={toggleTheme}
-            // Pass newReleases data - we'll simulate with recent highly-rated movies
-            newReleases={seen.length > 5 ? seen.slice(0, 10).map(m => ({
-              ...m,
-              vote_count: Math.floor(Math.random() * 5000) + 500,
-              release_date: m.release_date || new Date().toISOString().split('T')[0]
-            })) : unseen.slice(0, 10).map(m => ({
-              ...m,
-              vote_count: Math.floor(Math.random() * 5000) + 500,
-              release_date: m.release_date || new Date().toISOString().split('T')[0]
-            }))}
+            newReleases={newReleases}
           />
         )}
       </Tab.Screen>
       
       <Tab.Screen name="TopRated" options={{ title: 'Top 10' }}>
-        {props => (
-          <TopRatedScreen
-            {...props}
-            movies={seen}
-            genres={genres}
-            onUpdateRating={(movieId, newRating) => {
-              const updatedSeen = seen.map(m =>
-                m.id === movieId
-                  ? { ...m, userRating: newRating, eloRating: newRating * 100 }
-                  : m
-              );
-              setSeen(updatedSeen);
-            }}
-            isDarkMode={isDarkMode}
-          />
-        )}
-      </Tab.Screen>
+  {props => (
+    <TopRatedScreen
+      {...props}
+      movies={seen}
+      genres={genres || {}}
+      onUpdateRating={(movieId, newRating) => {
+        const updatedSeen = seen.map(m =>
+          m.id === movieId
+            ? { ...m, userRating: newRating, eloRating: newRating * 100 }
+            : m
+        );
+        setSeen(updatedSeen);
+      }}
+      isDarkMode={isDarkMode}
+    />
+  )}
+</Tab.Screen>
       
       <Tab.Screen name="Watchlist" options={{ title: 'Watchlist' }}>
         {props => (
@@ -106,13 +115,59 @@ function TabNavigator({ seen, unseen, setSeen, setUnseen, genres, isDarkMode, to
             {...props}
             seen={seen}
             unseen={unseen}
-            onAddToSeen={newMovie => {
+            onAddToSeen={(newMovie) => {
               console.log("Adding to seen:", newMovie.title);
-              setSeen([...seen, newMovie]);
+              // Check if it's an array (for batch updates)
+              if (Array.isArray(newMovie)) {
+                setSeen(newMovie);
+                return;
+              }
+              
+              // Check if it's an update to an existing movie
+              if (seen.some(movie => movie.id === newMovie.id)) {
+                // Update the movie
+                const updatedSeen = seen.map(movie => 
+                  movie.id === newMovie.id ? newMovie : movie
+                );
+                setSeen(updatedSeen);
+              } else {
+                // Add new movie
+                setSeen([...seen, newMovie]);
+              }
+              
+              // If it was in watchlist, remove it
+              if (unseen.some(movie => movie.id === newMovie.id)) {
+                const filteredUnseen = unseen.filter(m => m.id !== newMovie.id);
+                setUnseen(filteredUnseen);
+              }
+              
+              // Remove from skipped if it was skipped before
+              if (skippedMovies.includes(newMovie.id)) {
+                removeFromSkippedMovies(newMovie.id);
+              }
             }}
-            onAddToUnseen={newMovie => {
+            onAddToUnseen={(newMovie) => {
               console.log("Adding to watchlist:", newMovie.title);
-              setUnseen([...unseen, newMovie]);
+              // Check if it's an array (for batch updates)
+              if (Array.isArray(newMovie)) {
+                setUnseen(newMovie);
+                return;
+              }
+              
+              // Don't add if already in seen list
+              if (seen.some(movie => movie.id === newMovie.id)) {
+                return;
+              }
+              
+              // Check for duplicates
+              if (!unseen.some(movie => movie.id === newMovie.id)) {
+                setUnseen([...unseen, newMovie]);
+              }
+              
+              // Remove from skipped if it was skipped before
+              if (skippedMovies.includes(newMovie.id)) {
+                removeFromSkippedMovies(newMovie.id);
+              }
             }}
             genres={genres}
             isDarkMode={isDarkMode}
@@ -120,7 +175,7 @@ function TabNavigator({ seen, unseen, setSeen, setUnseen, genres, isDarkMode, to
         )}
       </Tab.Screen>
       
-      <Tab.Screen name="Wildcard" options={{ title: 'Wildcard' }}>
+      <Tab.Screen name="Wildcard" options={{ title: 'Wildcard', unmountOnBlur: true }}>
         {props => (
           <WildcardScreen
             {...props}
@@ -129,14 +184,31 @@ function TabNavigator({ seen, unseen, setSeen, setUnseen, genres, isDarkMode, to
             unseen={unseen}
             onAddToSeen={newMovie => {
               console.log("Adding to seen from wildcard:", newMovie.title);
-              setSeen([...seen, newMovie]);
+              // Check for duplicates
+              if (!seen.some(movie => movie.id === newMovie.id)) {
+                setSeen([...seen, newMovie]);
+                // Remove from skipped if it was skipped before
+                if (skippedMovies.includes(newMovie.id)) {
+                  removeFromSkippedMovies(newMovie.id);
+                }
+              }
             }}
             onAddToUnseen={newMovie => {
               console.log("Adding to watchlist from wildcard:", newMovie.title);
-              setUnseen([...unseen, newMovie]);
+              // Check for duplicates
+              if (!unseen.some(movie => movie.id === newMovie.id)) {
+                setUnseen([...unseen, newMovie]);
+                // Remove from skipped if it was skipped before
+                if (skippedMovies.includes(newMovie.id)) {
+                  removeFromSkippedMovies(newMovie.id);
+                }
+              }
             }}
             genres={genres}
             isDarkMode={isDarkMode}
+            skippedMovies={skippedMovies}
+            addToSkippedMovies={addToSkippedMovies}
+            removeFromSkippedMovies={removeFromSkippedMovies}
           />
         )}
       </Tab.Screen>
