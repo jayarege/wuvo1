@@ -1066,75 +1066,43 @@ const fetchPopularMovies = useCallback(async () => {
       )}
       
       {/* Rating Modal */}
-      <Modal
-        visible={ratingModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRatingModalVisible(false)}
-      >
-        <View style={modalStyles.modalOverlay}>
-          <View style={[
-            modalStyles.modalContent,
-            { backgroundColor: isDarkMode ? '#4B0082' : '#FFFFFF' }
-          ]}>
-            <Text style={[
-              modalStyles.modalTitle,
-              { color: isDarkMode ? '#F5F5F5' : '#333' }
-            ]}>
-              {selectedMovie ? `Rate "${selectedMovie.title}"` : 'Rate This Movie'}
-            </Text>
-            
-            <TextInput
-              style={[
-                ratingStyles.ratingInput,
-                {
-                  backgroundColor: isDarkMode ? '#1C2526' : '#F0F0F0',
-                  borderColor: isDarkMode ? '#8A2BE2' : '#E0E0E0',
-                  color: isDarkMode ? '#F5F5F5' : '#333',
-                }
-              ]}
-              value={ratingInput}
-              onChangeText={setRatingInput}
-              keyboardType="decimal-pad"
-              placeholder="Enter rating (1-10)"
-              placeholderTextColor={isDarkMode ? '#A0A0A0' : '#999999'}
-              maxLength={3}
-            />
-            
-            <View style={modalStyles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  modalStyles.modalButton,
-                  { backgroundColor: isDarkMode ? '#FFD700' : '#4B0082' }
-                ]}
-                onPress={submitRating}
-              >
-                <Text style={[
-                  modalStyles.modalButtonText,
-                  { color: isDarkMode ? '#1C2526' : '#FFFFFF' }
-                ]}>
-                  Save Rating
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  modalStyles.modalButton,
-                  modalStyles.cancelButton,
-                  { borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }
-                ]}
-                onPress={() => setRatingModalVisible(false)}
-              >
-                <Text style={[
-                  modalStyles.modalButtonText,
-                  { color: isDarkMode ? '#D3D3D3' : '#666' }
-                ]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <Modal visible={ratingModalVisible} animationType="slide" transparent>
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, justifyContent: 'flex-end' }}
+    >
+      <View style={[modalStyles.modalContainer, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
+        <Text style={modalStyles.modalTitle}>{selectedMovie?.title}</Text>
+        <TextInput
+          style={modalStyles.modalInput}
+          placeholder="Rate 1–10"
+          keyboardType="numeric"
+          value={ratingInput}
+          onChangeText={setRatingInput}
+          placeholderTextColor="#888"
+        />
+        <TouchableOpacity
+          style={modalStyles.modalButton}
+          onPress={() => {
+            onAddToSeen({
+              ...selectedMovie,
+              userRating: parseFloat(ratingInput),
+              eloRating: parseFloat(ratingInput) * 100,
+              comparisonWins: 0,
+              gamesPlayed: 0,
+              comparisonHistory: [],
+            });
+            setRatingModalVisible(false);
+            setRatingInput('');
+          }}
+        >
+          <Text style={modalStyles.modalButtonText}>Submit</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  </TouchableWithoutFeedback>
+</Modal>
     </SafeAreaView>
   );
 }

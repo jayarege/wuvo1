@@ -242,7 +242,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
                 </Text>
               </View>
               <Image
-                source={{ uri: getPosterUrl(movie.poster) }}
+                source={{ uri: getPosterUrl(movie.poster_path) }}
                 style={listStyles.resultPoster}
                 resizeMode="cover"
               />

@@ -266,7 +266,7 @@ const fetchMoviesByGenres = useCallback(async () => {
         score: m.vote_average,
         voteCount: m.vote_count,
         release_date: m.release_date,
-        genreIds: m.genres.map(g => g.id),
+        genre_Ids: m.genres.map(g => g.id),
         overview: m.overview,
         userRating: null
       });
@@ -296,7 +296,7 @@ const fetchMoviesByGenres = useCallback(async () => {
         score: top.vote_average,
         voteCount: top.vote_count,
         release_date: top.release_date,
-        genreIds: top.genre_ids,
+        genre_Ids: top.genre_ids,
         overview: top.overview,
         userRating: null
       });
@@ -338,23 +338,52 @@ const goToMovieRating = useCallback(() => {
 
 
   // Handle rating a movie
-  const handleRateMovie = useCallback((movie, rating) => {
+  const handleRateMovie = useCallback(async (movie, rating) => {
     // Create a properly structured movie object with all necessary fields
     const ratedMovie = {
-      ...movie,
-      userRating: rating,
-      eloRating: rating * 100, // Use same scale as Wildcard (0-1000)
-      comparisonHistory: [],
-      comparisonWins: 0,
-      gamesPlayed: 0
-    };
+  ...movie,
+  isOnboarded: true,                       // <— tag it here
+  poster_path: movie.poster || movie.poster_path || '',
+  genre_ids: movie.genre_ids || movie.genre_Ids || movie.genreIds || [],
+  userRating: rating,
+  eloRating: rating * 100,
+  comparisonHistory: [],
+  comparisonWins: 0,
+  gamesPlayed: 0
+};
+
+
+// If movie has genreIds property but not genre_ids, copy it over
+if (movie.genreIds && !movie.genre_ids) {
+  ratedMovie.genre_ids = movie.genreIds;
+}
+// If movie has neither, set an empty array
+if (!ratedMovie.genre_ids && !ratedMovie.genreIds) {
+  ratedMovie.genre_ids = [];
+}
     
     // Update rated movies
-    const updatedRatedMovies = [...ratedMovies.filter(m => m.id !== movie.id), ratedMovie];
-    setRatedMovies(updatedRatedMovies);
-    
-    // Add to global seen list to ensure immediate visibility
-    onAddToSeen(ratedMovie);
+    // Fetch full metadata before saving
+const response = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}&language=en-US`);
+const fullMovie = await response.json();
+const enrichedMovie = {
+  ...fullMovie,
+  poster_path: fullMovie.poster_path || movie.poster, // fix missing posters
+  genre_ids: fullMovie.genres?.map(g => g.id) || movie.genre_ids || movie.genre_Ids || [],
+  userRating: rating,
+  eloRating: rating * 100,
+  comparisonHistory: [],
+  comparisonWins: 0,
+  gamesPlayed: 0
+};
+
+// Update rated movies and persist
+const updatedRatedMovies = [...ratedMovies.filter(m => m.id !== movie.id), enrichedMovie];
+setRatedMovies(updatedRatedMovies);
+
+// Add to global seen list
+onAddToSeen(enrichedMovie);
+
     
     // Complete after 5 ratings instead of 3
     if (updatedRatedMovies.length >= 5) {
@@ -733,58 +762,74 @@ const currentMovie = useMemo(() => getNextMovie(), [getNextMovie]);
       />
       
       <View style={styles.movieDetails}>
-        <Text 
-          style={[
-            styles.movieTitle,
-            { color: isDarkMode ? '#FFFFFF' : '#333333' }
-          ]}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          {currentMovie.title}
+  <Text 
+    style={[
+      styles.movieTitle,
+      { color: isDarkMode ? '#FFFFFF' : '#333333' }
+    ]}
+    numberOfLines={2}
+    ellipsizeMode="tail"
+  >
+    {currentMovie.title}
+  </Text>
+  
+  <Text 
+    style={[
+      styles.movieScore,
+      { color: isDarkMode ? '#FFD700' : '#4B0082' }
+    ]}
+  >
+    TMDb: {currentMovie.score.toFixed(1)}
+  </Text>
+  
+  {/* "Haven't seen it" button moved above the rating buttons */}
+  <TouchableOpacity
+    style={[
+      styles.skipMovieButton,
+      { 
+        marginBottom: 12,
+        marginTop: 4,
+        backgroundColor: isDarkMode ? 'rgba(75, 0, 130, 0.2)' : 'rgba(240, 240, 240, 0.8)',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#8A2BE2' : '#E0E0E0'
+      }
+    ]}
+    onPress={() => handleSkipMovie(currentMovie)}
+  >
+    <Text style={[
+      styles.skipMovieText,
+      { 
+        color: isDarkMode ? '#D3D3D3' : '#666666',
+        fontWeight: '500'
+      }
+    ]}>
+      Haven't seen it
+    </Text>
+  </TouchableOpacity>
+  
+  <View style={styles.ratingButtons}>
+    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(rating => (
+      <TouchableOpacity
+        key={rating}
+        style={[
+          styles.ratingButton,
+          { backgroundColor: isDarkMode ? '#4B0082' : '#F0F0F0' }
+        ]}
+        onPress={() => handleRateMovie(currentMovie, rating)}
+      >
+        <Text style={[
+          styles.ratingText,
+          { color: isDarkMode ? '#FFFFFF' : '#4B0082' }
+        ]}>
+          {rating}
         </Text>
-        
-        <Text 
-          style={[
-            styles.movieScore,
-            { color: isDarkMode ? '#FFD700' : '#4B0082' }
-          ]}
-        >
-          TMDb: {currentMovie.score.toFixed(1)}
-        </Text>
-        
-        <View style={styles.ratingButtons}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(rating => (
-            <TouchableOpacity
-              key={rating}
-              style={[
-                styles.ratingButton,
-                { backgroundColor: isDarkMode ? '#4B0082' : '#F0F0F0' }
-              ]}
-              onPress={() => handleRateMovie(currentMovie, rating)}
-            >
-              <Text style={[
-                styles.ratingText,
-                { color: isDarkMode ? '#FFFFFF' : '#4B0082' }
-              ]}>
-                {rating}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        
-        <TouchableOpacity
-          style={styles.skipMovieButton}
-          onPress={() => handleSkipMovie(currentMovie)}
-        >
-          <Text style={[
-            styles.skipMovieText,
-            { color: isDarkMode ? '#D3D3D3' : '#666666' }
-          ]}>
-            Haven't seen it
-          </Text>
-        </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
+    ))}
+  </View>
+</View>
     </View>
     
     {/* Progress indicator */}

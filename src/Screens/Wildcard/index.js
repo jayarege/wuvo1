@@ -873,10 +873,10 @@ useEffect(() => {
  // Helper function to calculate dynamic K-factor based on experience
 const calculateKFactor = useCallback((gamesPlayed) => {
   // Use higher K for movies with fewer comparisons
-  if (gamesPlayed < 5) return 40;      // Very new movies (fast learning)
-  if (gamesPlayed < 10) return 30;     // Newer movies
-  if (gamesPlayed < 20) return 20;     // Somewhat established
-  return 10;                           // Well-established ratings (more stable)
+  if (gamesPlayed < 5) return 20;      // Very new movies (fast learning)
+  if (gamesPlayed < 10) return 15;     // Newer movies
+  if (gamesPlayed < 20) return 10;     // Somewhat established
+  return 5;                           // Well-established ratings (more stable)
 }, []);
 
 // Enhanced ELO-based rating adjustment function
@@ -953,7 +953,11 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     if (isKnownVsKnown) {
       // For known vs known, just adjust the ratings directly in the seen list
       // Calculate rating adjustment
-      const { updatedSeenMovie, updatedNewMovie } = adjustRating(seenMovie, newMovie, true);
+        const isOnboarded = seenMovie.isOnboarded;
+  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
+    ? adjustRating(seenMovie, newMovie, true)
+    : adjustRating(newMovie, seenMovie, false);
+
       
       // Update both movies in the seen list
       const updatedSeen = seen.map(m => {
@@ -976,7 +980,11 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
       markMovieAsCompared(newMovie.id);
       
       // Update ratings
-      const { updatedSeenMovie, updatedNewMovie } = adjustRating(seenMovie, newMovie, true);
+        const isOnboarded = seenMovie.isOnboarded;
+  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
+    ? adjustRating(seenMovie, newMovie, true)
+    : adjustRating(newMovie, seenMovie, false);
+
       
       // Update existing movie rating
       const updatedSeen = seen.map(m => 
@@ -1037,10 +1045,11 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
       setSeen(updatedSeen);
     } else {
       // Mark the movie as compared
-      markMovieAsCompared(newMovie.id);
-      
-      // Update ratings
-      const { updatedSeenMovie, updatedNewMovie } = adjustRating(newMovie, seenMovie, false);
+        const isOnboarded = seenMovie.isOnboarded;
+  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
+    ? adjustRating(seenMovie, newMovie, true)
+    : adjustRating(newMovie, seenMovie, false);
+
       
       // Update existing movie rating
       const updatedSeen = seen.map(m => 
