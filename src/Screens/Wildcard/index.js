@@ -13,14 +13,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import layoutStyles from '../../Styles/layoutStyles';
-import headerStyles from '../../Styles/headerStyles';
-import compareStyles from '../../Styles/compareStyles';
-import stateStyles from '../../Styles/StateStyles';
-import movieCardStyles from '../../Styles/movieCardStyles';
-import buttonStyles from '../../Styles/buttonStyles';
-import modalStyles from '../../Styles/modalStyles';
+import { LinearGradient } from 'expo-linear-gradient';
 
+// Import theme system and styling modules
+import { useMediaType } from '../../Navigation/TabNavigator';
+import { getLayoutStyles } from '../../Styles/layoutStyles';
+import { getHeaderStyles, ThemedHeader } from '../../Styles/headerStyles';
+import { getButtonStyles } from '../../Styles/buttonStyles';
+import { getModalStyles } from '../../Styles/modalStyles';
+import { getMovieCardStyles } from '../../Styles/movieCardStyles';
+
+import theme from '../../utils/Theme';
+
+// Import existing styles that don't need theming
+import { getCompareStyles } from '../../Styles/compareStyles';
+// Import existing styles that don't need theming
+import stateStyles from '../../Styles/StateStyles';
+
+// Constants for API and filtering
 const API_KEY = 'b401be0ea16515055d8d0bde16f80069';
 const MIN_VOTE_COUNT = 500;
 const MIN_SCORE = 7.0;
@@ -29,136 +39,93 @@ const BASELINE_COMPLETE_KEY = 'wuvo_baseline_complete';
 const COMPARISON_COUNT_KEY = 'wuvo_comparison_count';
 const COMPARISON_PATTERN_KEY = 'wuvo_comparison_pattern';
 const SKIPPED_MOVIES_KEY = 'wuvo_skipped_movies';
+const STREAMING_CACHE_KEY = 'wuvo_streaming_cache';
 
-// Enhanced movie baseline with top movies
-const baselineMovies = [
-  { id: 238, title: "The Godfather" },
-  { id: 155, title: "The Dark Knight" },
-  { id: 120, title: "The Lord of the Rings: The Fellowship of the Ring" },
-  { id: 121, title: "The Lord of the Rings: The Two Towers" },
-  { id: 122, title: "The Lord of the Rings: The Return of the King" },
-  { id: 27205, title: "Inception" },
-  { id: 157336, title: "Interstellar" },
-  { id: 98, title: "Gladiator" },
-  { id: 37165, title: "The Departed" },
-  { id: 244786, title: "Whiplash" },
-  { id: 1124, title: "The Prestige" },
-  { id: 68718, title: "Django Unchained" },
-  { id: 438631, title: "Dune: Part Two" },
-  { id: 10681, title: "WALL·E" },
-  { id: 77, title: "Memento" },
-  { id: 299536, title: "Avengers: Infinity War" },
-  { id: 324857, title: "Spider-Man: Into the Spider-Verse" },
-  { id: 569094, title: "Spider-Man: Across the Spider-Verse" },
-  { id: 16869, title: "Inglourious Basterds" },
-  { id: 49026, title: "The Dark Knight Rises" },
-  { id: 354912, title: "Coco" },
-  { id: 299534, title: "Avengers: Endgame" },
-  { id: 475557, title: "Joker" },
-  { id: 641, title: "Requiem for a Dream" },
-  { id: 10193, title: "Toy Story 3" },
-  { id: 301528, title: "Toy Story 4" },
-  { id: 38, title: "Eternal Sunshine of the Spotless Mind" },
-  { id: 14160, title: "Up" },
-  { id: 872585, title: "Oppenheimer" },
-  { id: 107, title: "Snatch" },
-  { id: 530915, title: "1917" },
-  { id: 106646, title: "The Wolf of Wall Street" },
-  { id: 556574, title: "Hamilton" },
-  { id: 490132, title: "Green Book" },
-  { id: 272, title: "Batman Begins" },
-  { id: 11324, title: "Shutter Island" },
-  { id: 601434, title: "The Father" },
-  { id: 7491, title: "There Will Be Blood" },
-  { id: 361743, title: "Top Gun: Maverick" },
-  { id: 359724, title: "Ford v Ferrari" },
-  { id: 6977, title: "No Country for Old Men" },
-  { id: 453, title: "A Beautiful Mind" },
-  { id: 24, title: "Kill Bill: Vol. 1" },
-  { id: 146233, title: "Prisoners" },
-  { id: 12, title: "Finding Nemo" },
-  { id: 508439, title: "Klaus" },
-  { id: 752, title: "V for Vendetta" },
-  { id: 150540, title: "Inside Out" },
-  { id: 359940, title: "Three Billboards Outside Ebbing, Missouri" },
-  { id: 640, title: "Catch Me If You Can" },
-  { id: 59440, title: "Warrior" },
-  { id: 12444, title: "Harry Potter and the Deathly Hallows: Part 2" },
-  { id: 2649, title: "Gran Torino" },
-  { id: 70, title: "Million Dollar Baby" },
-  { id: 76341, title: "Mad Max: Fury Road" },
-  { id: 634649, title: "Spider-Man: No Way Home" },
-  { id: 76203, title: "12 Years a Slave" },
-  { id: 120467, title: "The Grand Budapest Hotel" },
-  { id: 324786, title: "Hacksaw Ridge" },
-  { id: 210577, title: "Gone Girl" },
-  { id: 2062, title: "Ratatouille" },
-  { id: 585, title: "Monsters, Inc." },
-  { id: 10191, title: "How to Train Your Dragon" },
-  { id: 263115, title: "Logan" },
-  { id: 227306, title: "Spotlight" },
-  { id: 22, title: "Pirates of the Caribbean: The Curse of the Black Pearl" },
-  { id: 264644, title: "Room" },
-  { id: 4800, title: "Hotel Rwanda" },
-  { id: 80, title: "Before Sunset" },
-  { id: 9806, title: "The Incredibles" },
-  { id: 28178, title: "Hachi: A Dog's Tale" },
-  { id: 96721, title: "Rush" },
-  { id: 5915, title: "Into the Wild" },
-  { id: 50014, title: "The Help" },
-  { id: 9522, title: "Wedding Crashers" },
-  { id: 289, title: "Casablanca" },
-  { id: 872, title: "Singin' in the Rain" },
-  { id: 496243, title: "Parasite" },
-  { id: 637, title: "Life Is Beautiful" },
-  { id: 603, title: "The Matrix" },
-  { id: 550, title: "Fight Club" },
-  { id: 769, title: "Goodfellas" },
-  { id: 680, title: "Pulp Fiction" },
-  { id: 278, title: "The Shawshank Redemption" },
-  { id: 13, title: "Forrest Gump" },
-  { id: 857, title: "Saving Private Ryan" },
-  { id: 597, title: "Titanic" },
-  { id: 497, title: "The Green Mile" },
-  { id: 14, title: "American Beauty" },
-  { id: 745, title: "The Sixth Sense" },
-  { id: 807, title: "L.A. Confidential" },
-  { id: 4995, title: "Boogie Nights" },
-  { id: 627, title: "Trainspotting" },
-  { id: 807, title: "Se7en" },
-  { id: 629, title: "The Usual Suspects" },
-  { id: 500, title: "Reservoir Dogs" },
-  { id: 621, title: "Heat" },
-  { id: 37165, title: "The Truman Show" },
-  { id: 197, title: "Braveheart" },
-  { id: 105, title: "Back to the Future" },
-  { id: 78, title: "Blade Runner" },
-  { id: 679, title: "Aliens" },
-  { id: 562, title: "Die Hard" },
-  { id: 9377, title: "Ferris Bueller's Day Off" },
-  { id: 2108, title: "The Breakfast Club" },
-  { id: 218, title: "The Terminator" },
-  { id: 694, title: "The Shining" },
-  { id: 85, title: "Raiders of the Lost Ark" },
-  { id: 1891, title: "Star Wars: The Empire Strikes Back" },
-  { id: 601, title: "E.T. the Extra-Terrestrial" },
-  { id: 620, title: "Ghostbusters" },
-  { id: 744, title: "Top Gun" },
-  { id: 111, title: "Scarface" },
-  { id: 106, title: "Predator" },
-  { id: 9340, title: "The Goonies" },
-  { id: 235, title: "Stand by Me" },
-  { id: 600, title: "Full Metal Jacket" },
-  { id: 793, title: "Blue Velvet" },
-  { id: 1578, title: "Raging Bull" },
-  { id: 2493, title: "The Princess Bride" }
+// API timeout constant
+const API_TIMEOUT = 10000; // 10 seconds
+
+// Streaming services with their TMDB provider IDs (logos will be fetched from API)
+const STREAMING_SERVICES = [
+  { id: 8, name: 'Netflix' },
+  { id: 350, name: 'Apple TV+' },
+  { id: 15, name: 'Hulu' },
+  { id: 384, name: 'HBO Max' },
+  { id: 337, name: 'Disney+' },
+  { id: 387, name: 'Peacock' },
+  { id: 9, name: 'Prime Video' },
+  { id: 192, name: 'YouTube' },
+  { id: 2, name: 'Apple TV' }
 ];
 
-// Remove duplicates from baseline movies
-const uniqueBaselineMovies = Array.from(new Set(baselineMovies.map(m => m.id)))
-  .map(id => {
-    return baselineMovies.find(m => m.id === id);
-  });
+// Provider consolidation mapping - maps multiple provider IDs to a single display service
+const PROVIDER_CONSOLIDATION = {
+  // Amazon/Prime Video consolidation - all map to Prime Video (ID 9)
+  9: { displayId: 9, displayName: 'Prime Video' },           // Amazon Prime Video
+  10: { displayId: 9, displayName: 'Prime Video' },          // Amazon Video (rentals/purchases)
+  2100: { displayId: 9, displayName: 'Prime Video' },        // Amazon Prime Video with Ads
+  
+  // Apple consolidation - all map to Apple TV+ (ID 350)  
+  350: { displayId: 350, displayName: 'Apple TV+' },         // Apple TV+
+  2: { displayId: 350, displayName: 'Apple TV+' },           // Apple TV (rentals)
+  
+  // Keep others as-is
+  8: { displayId: 8, displayName: 'Netflix' },
+  15: { displayId: 15, displayName: 'Hulu' },
+  384: { displayId: 384, displayName: 'HBO Max' },
+  337: { displayId: 337, displayName: 'Disney+' },
+  387: { displayId: 387, displayName: 'Peacock' },
+  192: { displayId: 192, displayName: 'YouTube' },
+};
+
+// Decades for filtering
+const DECADES = [
+  { value: '1960s', label: 'Pre-70s', startYear: 1900, endYear: 1969 },
+  { value: '1970s', label: '1970s', startYear: 1970, endYear: 1979 },
+  { value: '1980s', label: '1980s', startYear: 1980, endYear: 1989 },
+  { value: '1990s', label: '1990s', startYear: 1990, endYear: 1999 },
+  { value: '2000s', label: '2000s', startYear: 2000, endYear: 2009 },
+  { value: '2010s', label: '2010s', startYear: 2010, endYear: 2019 },
+  { value: '2020s', label: '2020s', startYear: 2020, endYear: 2029 }
+];
+
+// List of high-quality movie IDs for initial baseline comparisons
+const baselineMovieIds = [
+  238, 155, 120, 121, 122, 27205, 157336, 98, 37165, 244786,
+  1124, 68718, 438631, 10681, 77, 299536, 324857, 569094, 16869, 49026,
+  354912, 299534, 475557, 641, 10193, 301528, 38, 14160, 872585, 107,
+  530915, 106646, 556574, 490132, 272, 11324, 601434, 7491, 361743, 359724,
+  6977, 453, 24, 146233, 12, 508439, 752, 150540, 359940, 640,
+  59440, 12444, 2649, 70, 76341, 634649, 76203, 120467, 324786, 210577,
+  2062, 585, 10191, 263115, 227306, 22, 264644, 4800, 80, 9806,
+  28178, 96721, 5915, 50014, 9522, 289, 872, 496243, 637, 603,
+  550, 769, 680, 278, 13, 857, 597, 497, 14, 745,
+  807, 4995, 627, 629, 500, 621, 197, 105, 78, 679,
+  562, 9377, 2108, 218, 694, 85, 1891, 601, 620, 744,
+  111, 106, 9340, 235, 600, 793, 1578, 2493
+];
+
+const uniqueBaselineMovieIds = [...new Set(baselineMovieIds)];
+
+// Helper function to add timeout to fetch requests
+const fetchWithTimeout = async (url, options = {}, timeout = API_TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
+  }
+};
 
 function WildcardScreen({
   seen = [],
@@ -167,27 +134,417 @@ function WildcardScreen({
   onAddToSeen,
   onAddToUnseen,
   genres = {},
-  isDarkMode
+  isDarkMode,
+  skippedMovies = [],
+  addToSkippedMovies = () => {},
+  removeFromSkippedMovies = () => {}
 }) {
 
+  // Use media type context for theming
+  const { mediaType } = useMediaType();
+  
+  // Get all themed styles
+// Get all themed styles
+  const layoutStyles = getLayoutStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  const headerStyles = getHeaderStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  const buttonStyles = getButtonStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  const modalStyles = getModalStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  const movieCardStyles = getMovieCardStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  const compareStyles = getCompareStyles(mediaType, isDarkMode ? 'dark' : 'light', theme);
+  
+  // Get theme colors for this media type and mode
+  const colors = theme[mediaType][isDarkMode ? 'dark' : 'light'];
+
+  // State variables for component functionality
   const [seenMovie, setSeenMovie] = useState(null);
   const [newMovie, setNewMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastAction, setLastAction] = useState(null);
   const [comparedMovies, setComparedMovies] = useState([]);
-  const [skippedMovies, setSkippedMovies] = useState([]);
   const [baselineComplete, setBaselineComplete] = useState(false);
-  const [showBaselineCompleteModal, setShowBaselineCompleteModal] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [selectedGenre, setSelectedGenre] = useState(null);
-  const [tempGenre, setTempGenre] = useState(null);
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [selectedDecades, setSelectedDecades] = useState([]);
+  const [selectedStreamingServices, setSelectedStreamingServices] = useState([]);
+  const [tempGenres, setTempGenres] = useState([]);
+  const [tempDecades, setTempDecades] = useState([]);
+  const [tempStreamingServices, setTempStreamingServices] = useState([]);
   const [comparisonCount, setComparisonCount] = useState(0);
   const [comparisonPattern, setComparisonPattern] = useState(0);
+  const [streamingProviders, setStreamingProviders] = useState([]);
+  
+  // NEW: Smart filtering state
+  const [streamingCache, setStreamingCache] = useState(new Map()); // Cache of movieId -> streaming services
+  const [filteredMoviePool, setFilteredMoviePool] = useState([]); // Movies that match current filters
+  const [isLoadingFilteredPool, setIsLoadingFilteredPool] = useState(false);
+  
+  // Refs to prevent race conditions and track component state
   const isLoadingRef = useRef(false);
   const appReady = useRef(false);
+  const isMountedRef = useRef(true);
 
-  // Custom reset function for just the Wildcard screen
+  // Set mounted ref
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Helper function to safely set state only if component is mounted
+  const safeSetState = useCallback((setter, value) => {
+    if (isMountedRef.current) {
+      setter(value);
+    }
+  }, []);
+
+  // Helper function to reset loading state
+  const resetLoadingState = useCallback(() => {
+    if (isMountedRef.current) {
+      isLoadingRef.current = false;
+      setLoading(false);
+    }
+  }, []);
+
+  // Helper function to set error state
+  const setErrorState = useCallback((errorMessage) => {
+    if (isMountedRef.current) {
+      console.error('Setting error state:', errorMessage);
+      setError(errorMessage);
+      setLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, []);
+
+  /**
+   * Load streaming cache from storage
+   */
+  const loadStreamingCache = useCallback(async () => {
+    try {
+      const cacheData = await AsyncStorage.getItem(STREAMING_CACHE_KEY);
+      if (cacheData) {
+        const parsedCache = JSON.parse(cacheData);
+        // Convert object back to Map
+        const cacheMap = new Map(Object.entries(parsedCache));
+        setStreamingCache(cacheMap);
+        console.log(`📦 Loaded streaming cache with ${cacheMap.size} entries`);
+      }
+    } catch (error) {
+      console.error('Failed to load streaming cache:', error);
+    }
+  }, []);
+
+  /**
+   * Save streaming cache to storage
+   */
+  const saveStreamingCache = useCallback(async (cache) => {
+    try {
+      // Convert Map to object for storage
+      const cacheObject = Object.fromEntries(cache);
+      await AsyncStorage.setItem(STREAMING_CACHE_KEY, JSON.stringify(cacheObject));
+    } catch (error) {
+      console.error('Failed to save streaming cache:', error);
+    }
+  }, []);
+
+  /**
+   * Get streaming data for a movie (with caching)
+   */
+  const getMovieStreamingData = useCallback(async (movieId) => {
+    // Check cache first
+    if (streamingCache.has(movieId.toString())) {
+      return streamingCache.get(movieId.toString());
+    }
+
+    try {
+      const streamingResponse = await fetchWithTimeout(
+        `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${API_KEY}`
+      );
+
+      if (!streamingResponse.ok) {
+        return [];
+      }
+
+      const streamingData = await streamingResponse.json();
+      const usData = streamingData.results?.US || {};
+
+      const flatrateProviders = usData.flatrate || [];
+      const rentProviders = usData.rent || [];
+      const buyProviders = usData.buy || [];
+
+      // Create payment type map
+      const providerTypeMap = new Map();
+      flatrateProviders.forEach(provider => {
+        providerTypeMap.set(provider.provider_id, 'free');
+      });
+      [...rentProviders, ...buyProviders].forEach(provider => {
+        if (!providerTypeMap.has(provider.provider_id)) {
+          providerTypeMap.set(provider.provider_id, 'paid');
+        }
+      });
+
+      // Combine and deduplicate
+      const allProviders = [...flatrateProviders, ...rentProviders, ...buyProviders];
+      const uniqueProviders = allProviders
+        .filter((provider, index, self) => 
+          index === self.findIndex(p => p.provider_id === provider.provider_id)
+        )
+        .map(provider => ({
+          ...provider,
+          paymentType: providerTypeMap.get(provider.provider_id)
+        }));
+
+      // Consolidate providers
+      const consolidatedServices = new Map();
+      uniqueProviders.forEach(provider => {
+        const consolidation = PROVIDER_CONSOLIDATION[provider.provider_id];
+        if (consolidation) {
+          const key = consolidation.displayId;
+          
+          if (consolidatedServices.has(key)) {
+            const existing = consolidatedServices.get(key);
+            if (existing.paymentType === 'free' || provider.paymentType === 'free') {
+              existing.paymentType = 'free';
+            }
+          } else {
+            consolidatedServices.set(key, {
+              provider_id: consolidation.displayId,
+              provider_name: consolidation.displayName,
+              logo_path: provider.logo_path,
+              paymentType: provider.paymentType
+            });
+          }
+        }
+      });
+
+      const streamingServices = Array.from(consolidatedServices.values());
+
+      // Cache the result
+      const newCache = new Map(streamingCache);
+      newCache.set(movieId.toString(), streamingServices);
+      setStreamingCache(newCache);
+      saveStreamingCache(newCache);
+
+      return streamingServices;
+    } catch (error) {
+      console.error(`Error fetching streaming for movie ${movieId}:`, error);
+      return [];
+    }
+  }, [streamingCache, saveStreamingCache]);
+
+  /**
+   * Build filtered movie pool based on current filters
+   */
+  const buildFilteredMoviePool = useCallback(async () => {
+    if (isLoadingFilteredPool) return;
+
+    console.log('🔍 Building filtered movie pool with filters:', {
+      genres: selectedGenres,
+      decades: selectedDecades,
+      streaming: selectedStreamingServices
+    });
+    setIsLoadingFilteredPool(true);
+
+    try {
+      let apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&vote_count.gte=${MIN_VOTE_COUNT}&include_adult=false`;
+
+      // Apply decade filters
+      if (selectedDecades.length > 0) {
+        const dateRanges = selectedDecades.map(decade => {
+          const decadeInfo = DECADES.find(d => d.value === decade);
+          return decadeInfo ? { start: decadeInfo.startYear, end: decadeInfo.endYear } : null;
+        }).filter(Boolean);
+
+        if (dateRanges.length > 0) {
+          const startYear = Math.min(...dateRanges.map(r => r.start));
+          const endYear = Math.max(...dateRanges.map(r => r.end));
+          apiUrl += `&primary_release_date.gte=${startYear}-01-01&primary_release_date.lte=${endYear}-12-31`;
+          console.log(`📅 Date filter applied: ${startYear}-${endYear}`);
+        }
+      }
+
+      // Apply genre filters
+      if (selectedGenres.length > 0) {
+        apiUrl += `&with_genres=${selectedGenres.join(',')}`;
+        console.log(`🎭 Genre filter applied: ${selectedGenres.join(',')}`);
+      }
+
+      // Create exclusion set
+      const excludedIds = new Set();
+      seen.forEach(movie => excludedIds.add(movie.id));
+      unseen.forEach(movie => excludedIds.add(movie.id));
+      comparedMovies.forEach(id => excludedIds.add(id));
+      skippedMovies.forEach(id => excludedIds.add(id));
+
+      console.log(`🚫 Excluding ${excludedIds.size} already seen/compared movies`);
+
+      // Get multiple pages to have better selection
+      const allMovies = [];
+      const maxPages = 3; // Get 3 pages for better variety
+
+      for (let page = 1; page <= maxPages; page++) {
+        try {
+          const response = await fetchWithTimeout(`${apiUrl}&page=${page}`);
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          const pageMovies = data.results.filter(m =>
+            m.poster_path &&
+            m.vote_average >= MIN_SCORE &&
+            !excludedIds.has(m.id)
+          );
+          
+          allMovies.push(...pageMovies);
+          console.log(`📄 Page ${page}: Found ${pageMovies.length} eligible movies`);
+          
+          // If we have enough movies, break early
+          if (allMovies.length >= 30) break;
+        } catch (error) {
+          console.log(`Error fetching page ${page}:`, error);
+          continue;
+        }
+      }
+
+      console.log(`🎬 Total movies found matching genre/decade filters: ${allMovies.length}`);
+
+      // If no streaming filter, we're done
+      if (selectedStreamingServices.length === 0) {
+        setFilteredMoviePool(allMovies.slice(0, 20)); // Limit to 20 for performance
+        setIsLoadingFilteredPool(false);
+        return;
+      }
+
+      // For streaming filters, check each movie
+      console.log(`🎥 Checking streaming availability for ${selectedStreamingServices.length} services...`);
+      const streamingFilteredMovies = [];
+      
+      for (let i = 0; i < Math.min(allMovies.length, 20); i++) {
+        const movie = allMovies[i];
+        try {
+          const streamingServices = await getMovieStreamingData(movie.id);
+          
+          // Check if movie is available on any of the selected services
+          const hasSelectedService = streamingServices.some(service => {
+            const consolidatedService = PROVIDER_CONSOLIDATION[service.provider_id];
+            const serviceId = consolidatedService ? consolidatedService.displayId : service.provider_id;
+            return selectedStreamingServices.includes(serviceId.toString());
+          });
+
+          if (hasSelectedService) {
+            streamingFilteredMovies.push({
+              ...movie,
+              streamingServices: streamingServices
+            });
+            console.log(`✅ ${movie.title} available on selected streaming service`);
+          } else {
+            console.log(`❌ ${movie.title} not available on selected services`);
+          }
+          
+          // Stop after finding enough matches
+          if (streamingFilteredMovies.length >= 15) break;
+        } catch (error) {
+          console.log(`❌ Error checking streaming for ${movie.title}:`, error);
+          continue;
+        }
+      }
+
+      setFilteredMoviePool(streamingFilteredMovies);
+      console.log(`🎯 Final filtered pool ready: ${streamingFilteredMovies.length} movies`);
+      
+    } catch (error) {
+      console.error('❌ Error building filtered movie pool:', error);
+      setFilteredMoviePool([]);
+    } finally {
+      setIsLoadingFilteredPool(false);
+    }
+  }, [selectedDecades, selectedGenres, selectedStreamingServices, seen, unseen, comparedMovies, skippedMovies, getMovieStreamingData]);
+
+  /**
+   * Get movie/TV details with streaming data
+   */
+  const getMovieDetails = useCallback(async (contentId) => {
+    try {
+      const endpoint = mediaType === 'movie' 
+        ? `https://api.themoviedb.org/3/movie/${contentId}?api_key=${API_KEY}&language=en-US`
+        : `https://api.themoviedb.org/3/tv/${contentId}?api_key=${API_KEY}&language=en-US`;
+        
+      const response = await fetchWithTimeout(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const streamingServices = await getMovieStreamingData(contentId);
+      
+      return {
+        id: data.id,
+        title: mediaType === 'movie' ? data.title : data.name,
+        score: data.vote_average,
+        voteCount: data.vote_count,
+        poster: data.poster_path,
+        overview: data.overview,
+        release_date: mediaType === 'movie' ? (data.release_date || 'Unknown') : (data.first_air_date || 'Unknown'),
+        genre_ids: data.genres.map(g => g.id).slice(0, 3),
+        release_year: mediaType === 'movie' 
+          ? new Date(data.release_date).getFullYear() 
+          : new Date(data.first_air_date).getFullYear(),
+        eloRating: data.vote_average * 10,
+        userRating: data.vote_average,
+        streamingServices: streamingServices,
+        mediaType: mediaType
+      };
+    } catch (error) {
+      console.error(`Error fetching details for ${mediaType} ${contentId}:`, error);
+      throw error;
+    }
+  }, [getMovieStreamingData, mediaType]);
+
+  const getFilteredMovie = useCallback(async () => {
+    const baseUrl = mediaType === 'movie' 
+      ? `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&vote_count.gte=${MIN_VOTE_COUNT}`
+      : `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}&language=en-US&sort_by=popularity.desc&vote_count.gte=${MIN_VOTE_COUNT}`;
+      
+    let apiUrl = baseUrl;
+    
+    if (selectedDecades.length > 0) {
+      const dateRanges = selectedDecades.map(decade => {
+        const decadeInfo = DECADES.find(d => d.value === decade);
+        return decadeInfo ? { start: decadeInfo.startYear, end: decadeInfo.endYear } : null;
+      }).filter(Boolean);
+      if (dateRanges.length > 0) {
+        const startYear = Math.min(...dateRanges.map(r => r.start));
+        const endYear = Math.max(...dateRanges.map(r => r.end));
+        const dateParam = mediaType === 'movie' 
+          ? `&primary_release_date.gte=${startYear}-01-01&primary_release_date.lte=${endYear}-12-31`
+          : `&first_air_date.gte=${startYear}-01-01&first_air_date.lte=${endYear}-12-31`;
+        apiUrl += dateParam;
+      }
+    }
+    if (selectedGenres.length > 0) {
+      apiUrl += `&with_genres=${selectedGenres.join(',')}`;
+    }
+    const randomPage = Math.floor(Math.random() * 5) + 1;
+    apiUrl += `&page=${randomPage}`;
+    const response = await fetchWithTimeout(apiUrl);
+    const data = await response.json();
+    
+    const excludedIds = new Set([...seen.map(m => m.id), ...unseen.map(m => m.id), ...comparedMovies, ...skippedMovies]);
+    
+    const eligibleContent = data.results.filter(m =>
+      m.poster_path && m.vote_average >= MIN_SCORE && !excludedIds.has(m.id)
+    );
+    if (eligibleContent.length === 0) {
+      throw new Error(`No ${mediaType === 'movie' ? 'movies' : 'TV shows'} found matching your filters`);
+    }
+    const randomContent = eligibleContent[Math.floor(Math.random() * eligibleContent.length)];
+    return await getMovieDetails(randomContent.id);
+  }, [selectedDecades, selectedGenres, seen, unseen, comparedMovies, skippedMovies, getMovieDetails, mediaType]);
+
+  /**
+   * Reset function - clears all comparison data but keeps user ratings
+   */
   const handleReset = useCallback(async () => {
     Alert.alert(
       "Reset Wildcard",
@@ -199,86 +556,403 @@ function WildcardScreen({
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
+              safeSetState(setLoading, true);
               
-              // Reset all Wildcard-related storage
               await AsyncStorage.removeItem(STORAGE_KEY);
               await AsyncStorage.removeItem(BASELINE_COMPLETE_KEY);
               await AsyncStorage.removeItem(COMPARISON_COUNT_KEY);
               await AsyncStorage.removeItem(COMPARISON_PATTERN_KEY);
               await AsyncStorage.removeItem(SKIPPED_MOVIES_KEY);
               
-              // Reset local state
-              setComparedMovies([]);
-              setSkippedMovies([]);
-              setBaselineComplete(false);
-              setComparisonCount(0);
-              setComparisonPattern(0);
-              setLastAction(null);
-              setSeenMovie(null);
-              setNewMovie(null);
-              setError(null);
+              safeSetState(setComparedMovies, []);
+              safeSetState(setBaselineComplete, false);
+              safeSetState(setComparisonCount, 0);
+              safeSetState(setComparisonPattern, 0);
+              safeSetState(setLastAction, null);
+              safeSetState(setSeenMovie, null);
+              safeSetState(setNewMovie, null);
+              safeSetState(setError, null);
+              safeSetState(setFilteredMoviePool, []); // Clear the pool
               
-              // Reset the loading flag ref
               isLoadingRef.current = false;
               
-              // Fetch a new movie after a short delay
               setTimeout(() => {
-                fetchRandomMovie();
+                if (isMountedRef.current) {
+                  fetchRandomMovie();
+                }
               }, 300);
               
               console.log("Wildcard state reset successfully");
             } catch (e) {
               console.error('Failed to reset wildcard state', e);
-              setError('Failed to reset. Please try again.');
-              setLoading(false);
+              setErrorState('Failed to reset. Please try again.');
             }
           }
         }
       ]
     );
-  }, [fetchRandomMovie]);
+  }, [safeSetState, setErrorState]);
 
-  // Load compared movies and other state from storage on initial load
+  /**
+   * Fetch streaming providers with logos from TMDB API
+   */
+  const fetchStreamingProviders = useCallback(async () => {
+    try {
+      const response = await fetchWithTimeout(
+        `https://api.themoviedb.org/3/watch/providers/movie?api_key=${API_KEY}&watch_region=US`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const availableProviders = data.results
+        .filter(provider => STREAMING_SERVICES.some(service => service.id === provider.provider_id))
+        .map(provider => {
+          const serviceInfo = STREAMING_SERVICES.find(service => service.id === provider.provider_id);
+          return {
+            id: provider.provider_id,
+            name: serviceInfo?.name || provider.provider_name,
+            logo_path: provider.logo_path,
+            logo_url: `https://image.tmdb.org/t/p/w92${provider.logo_path}`
+          };
+        });
+      
+      setStreamingProviders(availableProviders);
+    } catch (err) {
+      console.error('Error fetching streaming providers:', err);
+      setStreamingProviders(STREAMING_SERVICES.map(service => ({
+        ...service,
+        logo_url: null
+      })));
+    }
+  }, []);
+
+  const updateMovieRating = useCallback((movieToUpdate, newRating) => {
+    const updatedMovie = {
+      ...movieToUpdate,
+      userRating: newRating,
+      eloRating: newRating * 10,
+      gamesPlayed: (movieToUpdate.gamesPlayed || 0) + 1
+    };
+    
+    console.log(`Updating movie: ${updatedMovie.title} from ${movieToUpdate.userRating || 'unrated'} to ${newRating}`);
+    
+    setSeen(currentSeen => {
+      const movieExists = currentSeen.some(m => m.id === movieToUpdate.id);
+      
+      if (movieExists) {
+        const updatedSeen = currentSeen.map(m => 
+          m.id === movieToUpdate.id ? updatedMovie : m
+        );
+        console.log(`Updated existing movie in seen list: ${updatedMovie.title}`);
+        return updatedSeen;
+      } else {
+        console.log(`Adding new movie to seen list: ${updatedMovie.title}`);
+        return [...currentSeen, updatedMovie];
+      }
+    });
+    
+    onAddToSeen(updatedMovie);
+    return updatedMovie;
+  }, [setSeen, onAddToSeen]);
+
+  const getNextBaselineMovieId = useCallback(() => {
+    const remainingBaselineIds = uniqueBaselineMovieIds.filter(
+      id => !comparedMovies.includes(id) && !seen.some(sm => sm.id === id)
+    );
+    
+    if (remainingBaselineIds.length === 0) {
+      if (!baselineComplete) {
+        safeSetState(setBaselineComplete, true);
+        safeSetState(setComparisonPattern, 0);
+      }
+      return null;
+    }
+    
+    return remainingBaselineIds[Math.floor(Math.random() * remainingBaselineIds.length)];
+  }, [comparedMovies, baselineComplete, seen, safeSetState]);
+
+  const markMovieAsCompared = useCallback((movieId) => {
+    if (!comparedMovies.includes(movieId)) {
+      safeSetState(setComparedMovies, prev => [...prev, movieId]);
+    }
+    
+    safeSetState(setComparisonCount, prev => prev + 1);
+    safeSetState(setComparisonPattern, prev => (prev + 1) % 5);
+  }, [comparedMovies, safeSetState]);
+
+  /**
+   * Main function to fetch movies for comparison
+   */
+  const fetchRandomMovie = useCallback(async () => {
+    if (isLoadingRef.current || !isMountedRef.current) {
+      console.log('Already loading or component unmounted, skipping fetch');
+      return;
+    }
+    
+    isLoadingRef.current = true;
+    safeSetState(setLoading, true);
+    safeSetState(setError, null);
+    
+    if (seen.length < 3) {
+      setErrorState('You must have at least 3 movies ranked to use Wildcard mode.');
+      return;
+    }
+
+    try {
+      console.log('🎬 Starting movie fetch with filters:', { genres: selectedGenres, decades: selectedDecades, streaming: selectedStreamingServices });
+      
+      const isKnownVsKnown = comparisonPattern === 4;
+      
+      // Handle known vs known comparisons
+      if (isKnownVsKnown && seen.length >= 5) {
+        console.log('🔄 Known vs known comparison');
+        
+        let eligibleMovies = seen;
+        if (selectedGenres.length > 0) {
+          eligibleMovies = seen.filter(m => 
+            m.genre_ids && m.genre_ids.some(genreId => 
+              selectedGenres.includes(genreId.toString())
+            )
+          );
+          
+          if (eligibleMovies.length < 2) {
+            const genreNames = selectedGenres.map(id => genres[id] || 'Unknown').join(', ');
+            setErrorState(`Not enough movies in the selected genres: ${genreNames}. You need at least 2 rated movies in these genres for comparisons.`);
+            return;
+          }
+        }
+        
+        const shuffled = [...eligibleMovies].sort(() => 0.5 - Math.random());
+        
+        if (shuffled.length >= 2) {
+          // Add streaming data to known movies if missing
+          const movie1 = shuffled[0];
+          const movie2 = shuffled[1];
+          const movie1WithStreaming = {
+            ...movie1,
+            streamingServices: movie1.streamingServices || await getMovieStreamingData(movie1.id)
+          };
+          
+          const movie2WithStreaming = {
+            ...movie2,
+            streamingServices: movie2.streamingServices || await getMovieStreamingData(movie2.id)
+          };
+          
+          safeSetState(setSeenMovie, movie1WithStreaming);
+          safeSetState(setNewMovie, movie2WithStreaming);
+          resetLoadingState();
+          console.log('✅ Known vs known pair ready');
+          return;
+        } else {
+          throw new Error('Not enough different movies for comparison');
+        }
+      }
+      
+      const hasActiveFilters = selectedGenres.length > 0 || selectedDecades.length > 0;
+      
+      if (hasActiveFilters) {
+        console.log('🎯 FILTERS ACTIVE - Using ONLY filtered system');
+        
+        if (filteredMoviePool.length === 0 && !isLoadingFilteredPool) {
+          console.log('Building filtered pool...');
+          await buildFilteredMoviePool();
+        }
+        
+        // Handle known vs known with filters
+        if (isKnownVsKnown && seen.length >= 5) {
+          console.log('Known vs known with filters');
+          
+          let eligibleMovies = seen;
+          if (selectedGenres.length > 0) {
+            eligibleMovies = seen.filter(m => 
+              m.genre_ids && m.genre_ids.some(genreId => 
+                selectedGenres.includes(genreId.toString())
+              )
+            );
+          }
+          
+          if (eligibleMovies.length < 2) {
+            const genreNames = selectedGenres.map(id => genres[id] || 'Unknown').join(', ');
+            setErrorState(`Not enough movies in selected genres: ${genreNames}`);
+            return;
+          }
+          
+          const shuffled = [...eligibleMovies].sort(() => 0.5 - Math.random());
+          const movie1 = { ...shuffled[0], streamingServices: shuffled[0].streamingServices || await getMovieStreamingData(shuffled[0].id) };
+          const movie2 = { ...shuffled[1], streamingServices: shuffled[1].streamingServices || await getMovieStreamingData(shuffled[1].id) };
+          
+          safeSetState(setSeenMovie, movie1);
+          safeSetState(setNewMovie, movie2);
+          resetLoadingState();
+          console.log('✅ Filtered known vs known ready');
+          return;
+        }
+        
+        // Handle known vs unknown with filters
+        console.log('Known vs unknown with filters');
+        
+        let eligibleSeenMovies = seen;
+        if (selectedGenres.length > 0) {
+          eligibleSeenMovies = seen.filter(movie => 
+            movie.genre_ids && movie.genre_ids.some(genreId => 
+              selectedGenres.includes(genreId.toString())
+            )
+          );
+          
+          if (eligibleSeenMovies.length < 1) {
+            const genreNames = selectedGenres.map(id => genres[id] || 'Unknown').join(', ');
+            setErrorState(`No movies found in selected genres: ${genreNames}`);
+            return;
+          }
+        }
+        
+        let randomSeenMovie = eligibleSeenMovies[Math.floor(Math.random() * eligibleSeenMovies.length)];
+        if (!randomSeenMovie.streamingServices) {
+          randomSeenMovie = { ...randomSeenMovie, streamingServices: await getMovieStreamingData(randomSeenMovie.id) };
+        }
+        
+        safeSetState(setSeenMovie, randomSeenMovie);
+        console.log('✅ Selected filtered seen movie:', randomSeenMovie.title);
+        
+        const newMovieData = await getFilteredMovie();
+        
+        if (!newMovieData || newMovieData.id === randomSeenMovie.id) {
+          throw new Error('Failed to find a suitable filtered movie for comparison');
+        }
+        
+        console.log('✅ Selected filtered new movie:', newMovieData.title);
+        safeSetState(setNewMovie, newMovieData);
+        resetLoadingState();
+        return;
+        
+      } else {
+        console.log('📚 NO FILTERS - Using hardcoded/baseline system');
+        
+        // Handle known vs known WITHOUT filters (use baseline)
+        if (isKnownVsKnown && seen.length >= 5) {
+          console.log('Known vs known without filters');
+          
+          const shuffled = [...seen].sort(() => 0.5 - Math.random());
+          const movie1 = { ...shuffled[0], streamingServices: shuffled[0].streamingServices || await getMovieStreamingData(shuffled[0].id) };
+          const movie2 = { ...shuffled[1], streamingServices: shuffled[1].streamingServices || await getMovieStreamingData(shuffled[1].id) };
+          
+          safeSetState(setSeenMovie, movie1);
+          safeSetState(setNewMovie, movie2);
+          resetLoadingState();
+          return;
+        }
+        
+        // Handle known vs unknown WITHOUT filters (use baseline)
+        console.log('Known vs unknown without filters');
+        
+        let randomSeenMovie = seen[Math.floor(Math.random() * seen.length)];
+        if (!randomSeenMovie.streamingServices) {
+          randomSeenMovie = { ...randomSeenMovie, streamingServices: await getMovieStreamingData(randomSeenMovie.id) };
+        }
+        
+        safeSetState(setSeenMovie, randomSeenMovie);
+        console.log('✅ Selected baseline seen movie:', randomSeenMovie.title);
+        
+        let newMovieData = null;
+        
+        if (!baselineComplete) {
+          console.log('Using hardcoded baseline movies');
+          
+          const nextBaselineMovieId = getNextBaselineMovieId();
+          if (nextBaselineMovieId && nextBaselineMovieId !== randomSeenMovie.id) {
+            newMovieData = await getMovieDetails(nextBaselineMovieId);
+            
+            const remainingCount = uniqueBaselineMovieIds.filter(id => 
+              !comparedMovies.includes(id) && !seen.some(sm => sm.id === id)
+            ).length;
+            
+            if (remainingCount <= Math.floor(uniqueBaselineMovieIds.length * 0.15)) {
+              setTimeout(() => {
+                if (isMountedRef.current) {
+                  setBaselineComplete(true);
+                }
+              }, 1000);
+            }
+          } else {
+            safeSetState(setBaselineComplete, true);
+            const popularResponse = await fetchWithTimeout(
+              `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${Math.floor(Math.random() * 10) + 1}`
+            );
+            const popularData = await popularResponse.json();
+            const excludedIds = new Set([...seen.map(m => m.id), ...unseen.map(m => m.id), ...comparedMovies, ...skippedMovies]);
+            const eligiblePopular = popularData.results.filter(m => m.poster_path && !excludedIds.has(m.id));
+            const randomPopular = eligiblePopular[Math.floor(Math.random() * eligiblePopular.length)];
+            newMovieData = await getMovieDetails(randomPopular.id);
+          }
+        } else {
+          console.log(`Baseline complete - Using popular ${mediaType === 'movie' ? 'movies' : 'TV shows'}`);
+          
+          const endpoint = mediaType === 'movie'
+            ? `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${Math.floor(Math.random() * 10) + 1}`
+            : `https://api.themoviedb.org/3/tv/popular?api_key=${API_KEY}&language=en-US&page=${Math.floor(Math.random() * 10) + 1}`;
+            
+          const popularResponse = await fetchWithTimeout(endpoint);
+          const popularData = await popularResponse.json();
+          const excludedIds = new Set([...seen.map(m => m.id), ...unseen.map(m => m.id), ...comparedMovies, ...skippedMovies]);
+          const eligiblePopular = popularData.results.filter(m => m.poster_path && !excludedIds.has(m.id));
+          const randomPopular = eligiblePopular[Math.floor(Math.random() * eligiblePopular.length)];
+          newMovieData = await getMovieDetails(randomPopular.id);
+        }
+        
+        if (!newMovieData || newMovieData.id === randomSeenMovie.id) {
+          throw new Error('Failed to find a suitable baseline movie for comparison');
+        }
+        
+        console.log('✅ Selected baseline new movie:', newMovieData.title);
+        safeSetState(setNewMovie, newMovieData);
+        resetLoadingState();
+        return;
+      }
+      
+    } catch (err) {
+      console.error('❌ Error fetching movie:', err);
+      setErrorState(`Failed to load movie: ${err.message}`);
+    }
+  }, [
+    seen, selectedGenres, selectedDecades, selectedStreamingServices, genres, 
+    baselineComplete, comparedMovies, comparisonPattern, getNextBaselineMovieId,
+    getMovieDetails, getMovieStreamingData, buildFilteredMoviePool, 
+    filteredMoviePool, isLoadingFilteredPool,
+    unseen, skippedMovies, safeSetState, setErrorState, resetLoadingState
+  ]);
+
+  // Load stored state and streaming cache on mount
   useEffect(() => {
     const loadStoredState = async () => {
       try {
-        // Load compared movies
         const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-        if (jsonValue != null) {
+        if (jsonValue != null && isMountedRef.current) {
           setComparedMovies(JSON.parse(jsonValue));
         }
         
-        // Load skipped movies
-        const skippedValue = await AsyncStorage.getItem(SKIPPED_MOVIES_KEY);
-        if (skippedValue != null) {
-          setSkippedMovies(JSON.parse(skippedValue));
-        }
-        
-        // Load baseline complete status
         const baselineCompleteValue = await AsyncStorage.getItem(BASELINE_COMPLETE_KEY);
         const isBaselineComplete = baselineCompleteValue === 'true';
-        setBaselineComplete(isBaselineComplete);
+        if (isMountedRef.current) {
+          setBaselineComplete(isBaselineComplete);
+        }
         
-        // Load comparison count
         const countValue = await AsyncStorage.getItem(COMPARISON_COUNT_KEY);
-        if (countValue != null) {
+        if (countValue != null && isMountedRef.current) {
           setComparisonCount(parseInt(countValue, 10));
         }
         
-        // Load comparison pattern position
         const patternValue = await AsyncStorage.getItem(COMPARISON_PATTERN_KEY);
-        if (patternValue != null) {
+        if (patternValue != null && isMountedRef.current) {
           setComparisonPattern(parseInt(patternValue, 10));
         }
         
-        console.log(`Loaded ${JSON.parse(jsonValue || '[]').length} compared movies`);
-        console.log(`Loaded ${JSON.parse(skippedValue || '[]').length} skipped movies`);
-        console.log(`Baseline complete: ${isBaselineComplete}`);
-        console.log(`Comparison count: ${countValue}`);
-        console.log(`Comparison pattern: ${patternValue}`);
+        // Load streaming cache
+        await loadStreamingCache();
         
-        // Mark app as ready
         appReady.current = true;
       } catch (e) {
         console.error('Failed to load stored state', e);
@@ -287,26 +961,14 @@ function WildcardScreen({
     };
     
     loadStoredState();
-  }, []);
+  }, [loadStreamingCache]);
 
-useEffect(() => {
-  // This will run when the component mounts or when seen/unseen changes
-  if (appReady.current && !loading && isLoadingRef.current === false) {
-    // Reset state if we were in an error or stuck state
-    if (error || (!seenMovie && !newMovie && !loading)) {
-      console.log("Detected a stuck state or error - resetting wildcard");
-      setError(null);
-      setLoading(true);
-      setTimeout(() => {
-        isLoadingRef.current = false;
-        fetchRandomMovie();
-      }, 300);
-    }
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [seen, unseen]);
+  // Fetch streaming providers on mount
+  useEffect(() => {
+    fetchStreamingProviders();
+  }, [fetchStreamingProviders]);
 
-  // Save compared movies to storage whenever they change
+  // Save state changes
   useEffect(() => {
     const saveComparedMovies = async () => {
       try {
@@ -322,7 +984,6 @@ useEffect(() => {
     }
   }, [comparedMovies]);
 
-  // Save baseline complete status
   useEffect(() => {
     const saveBaselineComplete = async () => {
       try {
@@ -335,7 +996,6 @@ useEffect(() => {
     saveBaselineComplete();
   }, [baselineComplete]);
 
-  // Save comparison count
   useEffect(() => {
     const saveComparisonCount = async () => {
       try {
@@ -348,7 +1008,6 @@ useEffect(() => {
     saveComparisonCount();
   }, [comparisonCount]);
 
-  // Save comparison pattern
   useEffect(() => {
     const saveComparisonPattern = async () => {
       try {
@@ -361,734 +1020,289 @@ useEffect(() => {
     saveComparisonPattern();
   }, [comparisonPattern]);
 
-  // Save skipped movies whenever they change
+  // Rebuild filtered pool when filters change
   useEffect(() => {
-    const saveSkippedMovies = async () => {
+    const hasActiveFilters = selectedGenres.length > 0 || selectedDecades.length > 0;    
+    if (hasActiveFilters && appReady.current) {
+      console.log('🔄 Filters changed, clearing pool to rebuild on next fetch');
+      setFilteredMoviePool([]); // Clear pool so it rebuilds on next fetch
+    }
+  }, [selectedGenres, selectedDecades, selectedStreamingServices]);
+
+  // Initial fetch
+  useEffect(() => {
+    const initialLoadTimeout = setTimeout(() => {
+      if (loading && !seenMovie && !newMovie && isMountedRef.current) {
+        console.log('Initial load timeout - attempting recovery');
+        setErrorState('Loading took too long. Please try again.');
+      }
+    }, 15000);
+    
+    const initializeComponent = async () => {
       try {
-        const jsonValue = JSON.stringify(skippedMovies);
-        await AsyncStorage.setItem(SKIPPED_MOVIES_KEY, jsonValue);
-      } catch (e) {
-        console.error('Failed to save skipped movies', e);
+        let attempts = 0;
+        while (!appReady.current && attempts < 50 && isMountedRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!isMountedRef.current) return;
+        
+        if (!appReady.current) {
+          throw new Error('Component initialization timeout');
+        }
+        
+        await fetchRandomMovie();
+        clearTimeout(initialLoadTimeout);
+      } catch (err) {
+        console.error('Error in component initialization:', err);
+        clearTimeout(initialLoadTimeout);
+        setErrorState('Failed to initialize. Please try again.');
       }
     };
     
-    if (skippedMovies.length > 0) {
-      saveSkippedMovies();
-    }
-  }, [skippedMovies]);
-
-  // Get next baseline movie to compare
-  const getNextBaselineMovie = useCallback(() => {
-    // Find remaining baseline movies (not yet compared)
-    const remainingBaselineMovies = uniqueBaselineMovies.filter(
-      m => !comparedMovies.includes(m.id) && !seen.some(sm => sm.id === m.id)
-    );
+    initializeComponent();
     
-    if (remainingBaselineMovies.length === 0) {
-      // No more baseline movies, set baseline complete
-      if (!baselineComplete) {
-        setBaselineComplete(true);
-        setShowBaselineCompleteModal(true);
-        
-        // Important: Reset the comparison pattern when completing the baseline
-        // This ensures we'll start with an unknown movie (pattern 0) after completion
-        setComparisonPattern(0);
-      }
-      return null;
-    }
-    
-    // Get a random movie from the remaining ones
-    return remainingBaselineMovies[Math.floor(Math.random() * remainingBaselineMovies.length)];
-  }, [comparedMovies, baselineComplete, seen]);
-
-  // Add a movie to the compared list
-  const markMovieAsCompared = useCallback((movieId) => {
-    if (!comparedMovies.includes(movieId)) {
-      setComparedMovies(prev => [...prev, movieId]);
-    }
-    
-    // Increment comparison count
-    setComparisonCount(prev => prev + 1);
-    
-    // Update comparison pattern
-    setComparisonPattern(prev => (prev + 1) % 5); // 0,1,2,3,4,0,1,2,3,4,...
-  }, [comparedMovies]);
-
-  // Get movie details from TMDB API
-  const getMovieDetails = useCallback(async (movieId) => {
-    try {
-      const response = await fetch(
-        `https://api.themoviedb.org/3/movie/${movieId}?api_key=${API_KEY}&language=en-US`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch movie details');
-      }
-      
-      const data = await response.json();
-      
-      return {
-        id: data.id,
-        title: data.title,
-        score: data.vote_average,
-        voteCount: data.vote_count,
-        poster: data.poster_path,
-        overview: data.overview,
-        release_date: data.release_date || 'Unknown',
-        genre_ids: data.genres.map(g => g.id).slice(0, 3),
-        release_year: new Date(data.release_date).getFullYear(),
-        // Use TMDB score directly as the starting rating
-        eloRating: data.vote_average * 10, // Convert to 0-100 scale
-        userRating: data.vote_average
-      };
-    } catch (error) {
-      console.error(`Error fetching details for movie ${movieId}:`, error);
-      throw error;
-    }
+    return () => {
+      clearTimeout(initialLoadTimeout);
+    };
   }, []);
 
-  // Get similar movies based on user's top rated movies
-  const getSimilarMovie = useCallback(async () => {
-    if (seen.length === 0) {
-      throw new Error('Not enough rated movies to generate recommendations');
-    }
-    
-    // Get user's top 10 movies (or fewer if they haven't rated 10 yet)
-    const topMovies = [...seen]
-      .sort((a, b) => b.userRating - a.userRating)
-      .slice(0, Math.min(10, seen.length));
-    
-    // Extract relevant features from top movies
-    const favoriteGenres = {};
-    let totalYears = 0;
-    
-    topMovies.forEach(movie => {
-      // Collect genre preferences
-      if (movie.genre_ids) {
-        movie.genre_ids.forEach(genreId => {
-          favoriteGenres[genreId] = (favoriteGenres[genreId] || 0) + movie.userRating;
-        });
-      }
-      
-      // Collect year preferences if available
-      if (movie.release_date) {
-        const year = new Date(movie.release_date).getFullYear();
-        if (!isNaN(year)) {
-          totalYears += year * (movie.userRating / 10); // Weight by rating
-        }
-      }
-    });
-    
-    // Calculate average preferred year (weighted by rating)
-    const totalRatings = topMovies.reduce((sum, movie) => sum + movie.userRating, 0);
-    const avgYear = Math.round(totalYears / totalRatings);
-    
-    // Find preferred genre (highest total rating)
-    let preferredGenreId = null;
-    let highestGenreScore = 0;
-    
-    Object.entries(favoriteGenres).forEach(([genreId, score]) => {
-      if (score > highestGenreScore) {
-        highestGenreScore = score;
-        preferredGenreId = genreId;
-      }
-    });
-    
-    // Build API query based on user preferences
-    let apiUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&language=en-US&sort_by=vote_average.desc&vote_count.gte=${MIN_VOTE_COUNT}`;
-    
-    // Add year filter if we have year data
-    if (!isNaN(avgYear)) {
-      // Create a window of +/- 10 years around the average preferred year
-      const startYear = Math.max(1900, avgYear - 10);
-      const endYear = Math.min(new Date().getFullYear(), avgYear + 10);
-      apiUrl += `&primary_release_date.gte=${startYear}-01-01&primary_release_date.lte=${endYear}-12-31`;
-    }
-    
-    // Add genre filter if we have genre preference and it matches the selected filter
-    if (preferredGenreId && (!selectedGenre || selectedGenre === preferredGenreId)) {
-      apiUrl += `&with_genres=${preferredGenreId}`;
-    } else if (selectedGenre) {
-      apiUrl += `&with_genres=${selectedGenre}`;
-    }
-    
-    // Occasionally use different sort orders to get variety
-    const sortOptions = [
-      'vote_average.desc', 
-      'popularity.desc',
-      'primary_release_date.desc'
-    ];
-    const randomSort = sortOptions[Math.floor(Math.random() * sortOptions.length)];
-    apiUrl = apiUrl.replace('vote_average.desc', randomSort);
-
-    // Fetch first to get total page count
-    const initialResponse = await fetch(apiUrl);
-    if (!initialResponse.ok) {
-      throw new Error('Failed to fetch similar movies');
-    }
-    const initialData = await initialResponse.json();
-    const maxPage = Math.min(initialData.total_pages || 1, 20);
-
-    // Only fetch another page if we have multiple pages
-    const page = maxPage > 1 ? Math.floor(Math.random() * maxPage) + 1 : 1;
-    apiUrl += `&page=${page}`;
-    
-    // Fetch similar movies
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch similar movies');
-    }
-    
-    const data = await response.json();
-    
-    if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
-      throw new Error('No similar movies found');
-    }
-    
-    // Create a set of all IDs we want to exclude
-    const excludedIds = new Set();
-    
-    // Add all movies we've already seen
-    seen.forEach(movie => excludedIds.add(movie.id));
-    
-    // Add all movies in the watchlist
-    unseen.forEach(movie => excludedIds.add(movie.id));
-    
-    // Add all movies we've already compared
-    comparedMovies.forEach(id => excludedIds.add(id));
-    
-    // Add all movies we've skipped
-    skippedMovies.forEach(id => excludedIds.add(id));
-    
-    // Filter out movies already seen, in watchlist, already compared, or without posters
-    const filteredResults = data.results.filter(
-      m =>
-        m.poster_path &&
-        m.vote_average >= MIN_SCORE &&
-        !excludedIds.has(m.id)
-    );
-    
-    if (filteredResults.length === 0) {
-      // If no movies found, try a different approach - search for popular movies
-      const popularApiUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=${Math.floor(Math.random() * 20) + 1}`;
-      
-      const popularResponse = await fetch(popularApiUrl);
-      
-      if (!popularResponse.ok) {
-        throw new Error('Failed to fetch popular movies');
-      }
-      
-      const popularData = await popularResponse.json();
-      
-      // Filter again
-      const popularFiltered = popularData.results.filter(
-        m =>
-          m.poster_path &&
-          !excludedIds.has(m.id)
-      );
-      
-      if (popularFiltered.length === 0) {
-        throw new Error('No new movies found to compare. Try rating more movies first.');
-      }
-      
-      // Pick a random movie from the filtered popular results
-      const randomMovie = popularFiltered[Math.floor(Math.random() * popularFiltered.length)];
-      
-      // Format the movie data
-      return {
-        id: randomMovie.id,
-        title: randomMovie.title,
-        score: randomMovie.vote_average,
-        voteCount: randomMovie.vote_count,
-        poster: randomMovie.poster_path,
-        overview: randomMovie.overview,
-        release_date: randomMovie.release_date || 'Unknown',
-        genre_ids: randomMovie.genre_ids.slice(0, 3),
-        release_year: new Date(randomMovie.release_date).getFullYear(),
-        eloRating: randomMovie.vote_average * 10,
-        userRating: randomMovie.vote_average
-      };
-    }
-    
-    // Shuffle the filtered results to avoid always picking the same ones
-    const shuffledResults = [...filteredResults].sort(() => 0.5 - Math.random());
-
-    // Pick the first one after shuffling
-    const randomMovie = shuffledResults[0];
-    
-    // Format the movie data
-    return {
-      id: randomMovie.id,
-      title: randomMovie.title,
-      score: randomMovie.vote_average,
-      voteCount: randomMovie.vote_count,
-      poster: randomMovie.poster_path,
-      overview: randomMovie.overview,
-      release_date: randomMovie.release_date || 'Unknown',
-      genre_ids: randomMovie.genre_ids.slice(0, 3),
-      release_year: new Date(randomMovie.release_date).getFullYear(),
-      eloRating: randomMovie.vote_average * 10,
-      userRating: randomMovie.vote_average
-    };
-  }, [seen, unseen, selectedGenre, comparedMovies, skippedMovies]);
-
-  // Get a pair of known movies for comparison (occasionally)
-  const getKnownVsKnownPair = useCallback(async () => {
-    if (seen.length < 5) {
-      throw new Error('Not enough rated movies for known vs known comparison');
-    }
-    
-    // Filter by genre if specified
-    let eligibleMovies = seen;
-    if (selectedGenre) {
-      eligibleMovies = seen.filter(m => 
-        m.genre_ids && m.genre_ids.includes(parseInt(selectedGenre))
-      );
-      
-      if (eligibleMovies.length < 5) {
-        throw new Error('Not enough movies in this genre');
-      }
-    }
-    
-    // Get two different random movies from user's seen list
-    const shuffled = [...eligibleMovies].sort(() => 0.5 - Math.random());
-    
-    // Make sure we're not comparing a movie with itself
-    if (shuffled.length >= 2) {
-      // Return two different movies
-      return {
-        seenMovie: shuffled[0],
-        newSeenMovie: shuffled[1]
-      };
-    } else {
-      throw new Error('Not enough different movies for comparison');
-    }
-  }, [seen, selectedGenre]);
-
-  // Fetch random movie from baseline or recommendations
-  const fetchRandomMovie = useCallback(async () => {
-    // Guard against concurrent API calls
-    if (isLoadingRef.current) {
-      console.log('Already loading, skipping new fetch');
-      return;
-    }
-    
-    isLoadingRef.current = true;
-    setLoading(true);
-    
-    // Check if we have enough rated movies
-    if (seen.length < 3) {
-      setError('You must have at least 3 movies ranked to use Wildcard mode.');
-      setLoading(false);
-      isLoadingRef.current = false;
-      return;
-    }
-
-    try {
-      // Determine what type of comparison to show based on the pattern:
-      // 0,1,2,3: Known vs Unknown
-      // 4: Known vs Known
-      const isKnownVsKnown = comparisonPattern === 4;
-      
-      if (isKnownVsKnown && seen.length >= 5) {
-        // Get a comparison between two already-seen movies
-        const { seenMovie: movieA, newSeenMovie: movieB } = await getKnownVsKnownPair();
-        
-        // Ensure we have two different movies
-        if (movieA.id === movieB.id) {
-          throw new Error('Cannot compare a movie with itself');
-        }
-        
-        setSeenMovie(movieA);
-        setNewMovie(movieB);
-        setLoading(false);
-        isLoadingRef.current = false;
-        return;
-      }
-      
-      // For known vs unknown comparisons:
-      
-      // Select a random movie from those you've seen
-      // If genre filter is active, only select from movies in that genre
-      let eligibleSeenMovies = seen;
-      
-      if (selectedGenre) {
-        eligibleSeenMovies = seen.filter(movie => 
-          movie.genre_ids && movie.genre_ids.includes(parseInt(selectedGenre))
-        );
-        
-        if (eligibleSeenMovies.length < 2) {
-          setError(`Not enough movies in the "${genres[selectedGenre]}" genre. Please rate more movies in this genre or select a different genre.`);
-          setLoading(false);
-          isLoadingRef.current = false;
-          return;
-        }
-      }
-      
-      const randomSeenMovie = eligibleSeenMovies[Math.floor(Math.random() * eligibleSeenMovies.length)];
-      setSeenMovie(randomSeenMovie);
-      
-      let newMovieData = null;
-
-      // Determine whether to use baseline or recommendation algorithm
-      if (!baselineComplete) {
-        // Try to get next baseline movie first
-        const nextBaselineMovie = getNextBaselineMovie();
-        
-        if (nextBaselineMovie) {
-          console.log('Using baseline movie:', nextBaselineMovie.title);
-          
-          // Ensure we're not comparing the same movie from the baseline
-          if (nextBaselineMovie.id === randomSeenMovie.id) {
-            // Try to get another baseline movie
-            const remainingBaselineMovies = uniqueBaselineMovies.filter(
-              m => !comparedMovies.includes(m.id) && !seen.some(sm => sm.id === m.id) && m.id !== randomSeenMovie.id
-            );
-            
-            if (remainingBaselineMovies.length > 0) {
-              const alternativeMovie = remainingBaselineMovies[Math.floor(Math.random() * remainingBaselineMovies.length)];
-              newMovieData = await getMovieDetails(alternativeMovie.id);
-            } else {
-              // Fall back to recommendation algorithm
-              newMovieData = await getSimilarMovie();
-            }
-          } else {
-            newMovieData = await getMovieDetails(nextBaselineMovie.id);
-          }
-          
-          // Check baseline completion - only after majority of baseline movies
-          const remainingCount = uniqueBaselineMovies.filter(m => 
-            !comparedMovies.includes(m.id) && !seen.some(sm => sm.id === m.id)
-          ).length;
-          
-          // Only mark baseline complete when 85% or more are rated
-          if (remainingCount <= Math.floor(uniqueBaselineMovies.length * 0.15)) {
-            // This is near the end of baseline movies, prepare to show completion notice
-            setTimeout(() => {
-              setBaselineComplete(true);
-              setShowBaselineCompleteModal(true);
-            }, 1000);
-          }
-        } else {
-          // No more baseline movies, switch to recommendations
-          console.log('All baseline movies compared, switching to recommendations');
-          setBaselineComplete(true);
-          newMovieData = await getSimilarMovie();
-        }
-      } else {
-        // Already completed baseline, use recommendation algorithm
-        console.log('Using recommendation algorithm');
-        newMovieData = await getSimilarMovie();
-      }
-      
-      // Make sure we didn't end up with the same movie somehow
-      if (newMovieData && newMovieData.id === randomSeenMovie.id) {
-        throw new Error('Cannot compare a movie with itself');
-      }
-      
-      setNewMovie(newMovieData);
-      setLoading(false);
-      isLoadingRef.current = false;
-    } catch (err) {
-      console.error('Error fetching movie:', err);
-      setError(`Failed to load movie: ${err.message}`);
-      setLoading(false);
-      isLoadingRef.current = false;
-    }
-  }, [
-  seen, 
-  selectedGenre, 
-  genres, 
-  baselineComplete,
-  comparedMovies,
-  comparisonPattern,
-  getNextBaselineMovie,
-  getMovieDetails, 
-  getSimilarMovie,
-  getKnownVsKnownPair
-]);
-
-  // Initial fetch on component mount
-  useEffect(() => {
-    try {
-      fetchRandomMovie();
-    } catch (err) {
-      console.error('Error in initial movie fetch:', err);
-      setError('Something went wrong while loading. Please try again.');
-      setLoading(false);
-      isLoadingRef.current = false;
-    }
-    
-    // Cleanup function
-    return () => {
-      // Set flag to prevent any ongoing fetches from completing
-      isLoadingRef.current = true;
-    };
-  }, [fetchRandomMovie]);
-
-  // Save current filter settings before showing modal
+  // Filter modal functions
   const openFilterModal = useCallback(() => {
-    // Initialize temp values with current settings
-    setTempGenre(selectedGenre);
+    setTempGenres([...selectedGenres]);
+    setTempDecades([...selectedDecades]);
+    setTempStreamingServices([...selectedStreamingServices]);
     setFilterModalVisible(true);
-  }, [selectedGenre]);
+  }, [selectedGenres, selectedDecades, selectedStreamingServices]);
 
-  // Apply filter changes and fetch new movies
   const applyFilters = useCallback(() => {
-    // First hide the modal
     setFilterModalVisible(false);
     
-    // Only reload if settings changed
-    const settingsChanged = selectedGenre !== tempGenre;
+    const genresChanged = JSON.stringify(selectedGenres.sort()) !== JSON.stringify(tempGenres.sort());
+    const decadesChanged = JSON.stringify(selectedDecades.sort()) !== JSON.stringify(tempDecades.sort());
+    const streamingChanged = JSON.stringify(selectedStreamingServices.sort()) !== JSON.stringify(tempStreamingServices.sort());
+    const settingsChanged = genresChanged || decadesChanged || streamingChanged;
     
-    // Apply temp values to actual state
-    setSelectedGenre(tempGenre);
+    setSelectedGenres([...tempGenres]);
+    setSelectedDecades([...tempDecades]);
+    setSelectedStreamingServices([...tempStreamingServices]);
     
-    // Only fetch new movie if settings actually changed
     if (settingsChanged) {
-      // Use setTimeout to ensure the modal is completely gone before changing UI state
-      setTimeout(() => {
-        setNewMovie(null);
-        setSeenMovie(null);
-        setLoading(true);
-        try {
-          fetchRandomMovie();
-        } catch (err) {
-          console.error('Error after filter change:', err);
-          setError('Something went wrong while loading. Please try again.');
-          setLoading(false);
+      console.log('🔄 Filters changed - Genres:', tempGenres, 'Decades:', tempDecades, 'Streaming:', tempStreamingServices);
+      
+      setTimeout(async () => {
+        if (isMountedRef.current) {
+          setNewMovie(null);
+          setSeenMovie(null);
+          setLoading(true);
+          setError(null);
           isLoadingRef.current = false;
+          
+          try {
+            await fetchRandomMovie();
+          } catch (err) {
+            console.error('Error after filter change:', err);
+            setErrorState('Something went wrong while loading. Please try again.');
+          }
         }
       }, 300);
     }
-  }, [selectedGenre, tempGenre, fetchRandomMovie]);
+  }, [selectedGenres, selectedDecades, selectedStreamingServices, tempGenres, tempDecades, tempStreamingServices, fetchRandomMovie, setErrorState]);
 
-  // Cancel filter changes
   const cancelFilters = useCallback(() => {
-    // Just close modal without applying changes
     setFilterModalVisible(false);
   }, []);
 
- // Helper function to calculate dynamic K-factor based on experience
-const calculateKFactor = useCallback((gamesPlayed) => {
-  // Use higher K for movies with fewer comparisons
-  if (gamesPlayed < 5) return 20;      // Very new movies (fast learning)
-  if (gamesPlayed < 10) return 15;     // Newer movies
-  if (gamesPlayed < 20) return 10;     // Somewhat established
-  return 5;                           // Well-established ratings (more stable)
-}, []);
+  const toggleGenre = useCallback((genreId) => {
+    setTempGenres(prev => 
+      prev.includes(genreId) 
+        ? prev.filter(id => id !== genreId)
+        : [...prev, genreId]
+    );
+  }, []);
 
-// Enhanced ELO-based rating adjustment function
-const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
-  // Calculate ratings with existing data
-  const winnerRating = winner.userRating;
-  const loserRating = loser.userRating;
+  const toggleDecade = useCallback((decade) => {
+    setTempDecades(prev => 
+      prev.includes(decade) 
+        ? prev.filter(d => d !== decade)
+        : [...prev, decade]
+    );
+  }, []);
+
+  const toggleStreamingService = useCallback((serviceId) => {
+    setTempStreamingServices(prev => 
+      prev.includes(serviceId.toString()) 
+        ? prev.filter(id => id !== serviceId.toString())
+        : [...prev, serviceId.toString()]
+    );
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setTempGenres([]);
+    setTempDecades([]);
+    setTempStreamingServices([]);
+  }, []);
+
+  const hasActiveFilters = selectedGenres.length > 0 || selectedDecades.length > 0;
   
-  // Calculate expected win probability using modified Elo formula
-  // We divide by 4 instead of 400 because our scale is 1-10 not 0-3000
-  const expectedWinProbability = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 4));
-  
-  // Dynamic K-factor: higher for movies with fewer comparisons
-  const winnerK = calculateKFactor(winner.gamesPlayed || 0);
-  const loserK = calculateKFactor(loser.gamesPlayed || 0);
-  
-  // Calculate rating changes
-  // The (1 - expectedWinProbability) is the "surprise factor" - how unexpected was this win?
-  // If the winner was already expected to win, the change will be small
-  const winnerIncrease = Math.max(0.1, winnerK * (1 - expectedWinProbability));
-  const loserDecrease = Math.max(0.1, loserK * (1 - expectedWinProbability));
-  
-  // Apply bigger adjustment for upsets (low rated beats high rated)
-  let adjustedWinnerIncrease = winnerIncrease;
-  let adjustedLoserDecrease = loserDecrease;
-  if (winnerRating < loserRating) {
-    // This is an upset - boost the adjustment
-    adjustedWinnerIncrease *= 1.2; // 20% boost for upset victory
-  }
-  
-  // Cap adjustments to prevent wild swings
-  const MAX_RATING_CHANGE = 0.7;
-  adjustedWinnerIncrease = Math.min(MAX_RATING_CHANGE, adjustedWinnerIncrease);
-  adjustedLoserDecrease = Math.min(MAX_RATING_CHANGE, adjustedLoserDecrease);
-  
-  // Calculate new ratings
-  let newWinnerRating = winnerRating + adjustedWinnerIncrease;
-  let newLoserRating = loserRating - adjustedLoserDecrease;
-  
-  // Clamp between 1-10 and round to nearest tenth
-  newWinnerRating = Math.round(Math.min(10, Math.max(1, newWinnerRating)) * 10) / 10;
-  newLoserRating = Math.round(Math.min(10, Math.max(1, newLoserRating)) * 10) / 10;
-  
-  // Create updated movie objects
-  const updatedWinner = {
-    ...winner,
-    userRating: newWinnerRating,
-    eloRating: newWinnerRating * 10,
-    gamesPlayed: (winner.gamesPlayed || 0) + 1
-  };
-  
-  const updatedLoser = {
-    ...loser,
-    userRating: newLoserRating,
-    eloRating: newLoserRating * 10,
-    gamesPlayed: (loser.gamesPlayed || 0) + 1
-  };
-  
-  // Return objects formatted for the appropriate positions
-  return winnerIsSeenMovie 
-    ? { updatedSeenMovie: updatedWinner, updatedNewMovie: updatedLoser } 
-    : { updatedSeenMovie: updatedLoser, updatedNewMovie: updatedWinner };
-}, [calculateKFactor]);
-  // Handle user choosing the seen movie as better
+  const calculateKFactor = useCallback((gamesPlayed) => {
+    if (gamesPlayed < 5) return .5;
+    if (gamesPlayed < 10) return .25;
+    if (gamesPlayed < 20) return .125;
+    return .1;
+  }, []);
+
+  const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
+    const winnerRating = winner.userRating;
+    const loserRating = loser.userRating;
+    
+    const ratingDifference = Math.abs(winnerRating - loserRating);
+    const expectedWinProbability = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 4));
+    
+    const winnerK = calculateKFactor(winner.gamesPlayed || 0);
+    const loserK = calculateKFactor(loser.gamesPlayed || 0);
+    
+    const winnerIncrease = Math.max(0.1, winnerK * (1 - expectedWinProbability));
+    const loserDecrease = Math.max(0.1, loserK * (1 - expectedWinProbability));
+    
+    let adjustedWinnerIncrease = winnerIncrease;
+    let adjustedLoserDecrease = loserDecrease;
+    if (winnerRating < loserRating) {
+      adjustedWinnerIncrease *= 1.2;
+    }
+    
+    const isMajorUpset = winnerRating < loserRating && ratingDifference > 3.0;
+    if (isMajorUpset) {
+      adjustedWinnerIncrease += 3.0;
+      console.log(`🚨 MAJOR UPSET! ${winner.title} (${winnerRating}) defeated ${loser.title} (${loserRating}). Adding 3.0 bonus points!`);
+    }
+    
+    const MAX_RATING_CHANGE = 0.7;
+    
+    if (isMajorUpset) {
+      adjustedLoserDecrease = Math.min(MAX_RATING_CHANGE, adjustedLoserDecrease);
+    } else {
+      adjustedWinnerIncrease = Math.min(MAX_RATING_CHANGE, adjustedWinnerIncrease);
+      adjustedLoserDecrease = Math.min(MAX_RATING_CHANGE, adjustedLoserDecrease);
+    }
+    
+    let newWinnerRating = winnerRating + adjustedWinnerIncrease;
+    let newLoserRating = loserRating - adjustedLoserDecrease;
+    
+    newWinnerRating = Math.round(Math.min(10, Math.max(1, newWinnerRating)) * 10) / 10;
+    newLoserRating = Math.round(Math.min(10, Math.max(1, newLoserRating)) * 10) / 10;
+    
+    const updatedWinner = {
+      ...winner,
+      userRating: newWinnerRating,
+      eloRating: newWinnerRating * 10,
+      gamesPlayed: (winner.gamesPlayed || 0) + 1
+    };
+    
+    const updatedLoser = {
+      ...loser,
+      userRating: newLoserRating,
+      eloRating: newLoserRating * 10,
+      gamesPlayed: (loser.gamesPlayed || 0) + 1
+    };
+    
+    return winnerIsSeenMovie 
+      ? { updatedSeenMovie: updatedWinner, updatedNewMovie: updatedLoser } 
+      : { updatedSeenMovie: updatedLoser, updatedNewMovie: updatedWinner };
+  }, [calculateKFactor]);
+
   const handleSeenWin = useCallback(() => {
-    if (isLoadingRef.current || !seenMovie || !newMovie) {
+    if (isLoadingRef.current || !seenMovie || !newMovie || !isMountedRef.current) {
       console.log('Ignoring click while loading or missing movies');
       return;
     }
     
-    // Check if this is a known vs known comparison
+    console.log('=== SEEN MOVIE WIN ===');
+    
     const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
+    const { updatedSeenMovie, updatedNewMovie } = adjustRating(seenMovie, newMovie, true);
+    
+    updateMovieRating(seenMovie, updatedSeenMovie.userRating);
+    updateMovieRating(newMovie, updatedNewMovie.userRating);
+    
+    isLoadingRef.current = false;
     
     if (isKnownVsKnown) {
-      // For known vs known, just adjust the ratings directly in the seen list
-      // Calculate rating adjustment
-        const isOnboarded = seenMovie.isOnboarded;
-  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
-    ? adjustRating(seenMovie, newMovie, true)
-    : adjustRating(newMovie, seenMovie, false);
-
-      
-      // Update both movies in the seen list
-      const updatedSeen = seen.map(m => {
-        if (m.id === seenMovie.id) return updatedSeenMovie;
-        if (m.id === newMovie.id) return updatedNewMovie;
-        return m;
-      });
-      
-      // Save action for undo
-      setLastAction({
-        type: 'known_comparison',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie},
-        winnerIsSeenMovie: true
-      });
-      
-      setSeen(updatedSeen);
+      safeSetState(setComparisonCount, prev => prev + 1);
+      safeSetState(setComparisonPattern, prev => (prev + 1) % 5);
     } else {
-      // Mark the movie as compared
       markMovieAsCompared(newMovie.id);
-      
-      // Update ratings
-        const isOnboarded = seenMovie.isOnboarded;
-  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
-    ? adjustRating(seenMovie, newMovie, true)
-    : adjustRating(newMovie, seenMovie, false);
-
-      
-      // Update existing movie rating
-      const updatedSeen = seen.map(m => 
-        m.id === seenMovie.id ? updatedSeenMovie : m
-      );
-      
-      // Add new movie to seen list if not already there
-      if (!seen.some(m => m.id === updatedNewMovie.id)) {
-        onAddToSeen(updatedNewMovie);
-      }
-      
-      // Save the action for potential undo
-      setLastAction({
-        type: 'comparison',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie},
-        winnerIsSeenMovie: true
-      });
     }
     
-    // Fetch the next comparison
-    setNewMovie(null);
-    setSeenMovie(null);
-    setLoading(true);
-    fetchRandomMovie();
-  }, [seenMovie, newMovie, seen, setSeen, adjustRating, fetchRandomMovie, markMovieAsCompared, comparisonPattern, onAddToSeen]);
+    safeSetState(setLastAction, {
+      type: isKnownVsKnown ? 'known_comparison' : 'comparison',
+      seenMovie: {...seenMovie},
+      newMovie: {...newMovie},
+      winnerIsSeenMovie: true
+    });
+    
+    safeSetState(setNewMovie, null);
+    safeSetState(setSeenMovie, null);
+    safeSetState(setLoading, true);
+    
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchRandomMovie();
+      }
+    }, 100);
+  }, [seenMovie, newMovie, seen, adjustRating, updateMovieRating, fetchRandomMovie, markMovieAsCompared, safeSetState]);
 
-  // Handle user choosing the new movie as better
   const handleNewWin = useCallback(() => {
-    if (isLoadingRef.current || !seenMovie || !newMovie) {
+    if (isLoadingRef.current || !seenMovie || !newMovie || !isMountedRef.current) {
       console.log('Ignoring click while loading or missing movies');
       return;
     }
     
-    // Check if this is a known vs known comparison
+    console.log('=== NEW MOVIE WIN ===');
+    
     const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
+    const { updatedSeenMovie, updatedNewMovie } = adjustRating(newMovie, seenMovie, false);
+    
+    updateMovieRating(seenMovie, updatedSeenMovie.userRating);
+    updateMovieRating(newMovie, updatedNewMovie.userRating);
+    
+    isLoadingRef.current = false;
     
     if (isKnownVsKnown) {
-      // For known vs known, just adjust the ratings directly in the seen list
-      // Calculate rating adjustment
-      const { updatedSeenMovie, updatedNewMovie } = adjustRating(newMovie, seenMovie, false);
-      
-      // Update both movies in the seen list
-      const updatedSeen = seen.map(m => {
-        if (m.id === seenMovie.id) return updatedSeenMovie;
-        if (m.id === newMovie.id) return updatedNewMovie;
-        return m;
-      });
-      
-      // Save action for undo
-      setLastAction({
-        type: 'known_comparison',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie},
-        winnerIsSeenMovie: false
-      });
-      
-      setSeen(updatedSeen);
+      safeSetState(setComparisonCount, prev => prev + 1);
+      safeSetState(setComparisonPattern, prev => (prev + 1) % 5);
     } else {
-      // Mark the movie as compared
-        const isOnboarded = seenMovie.isOnboarded;
-  const { updatedSeenMovie, updatedNewMovie } = isOnboarded
-    ? adjustRating(seenMovie, newMovie, true)
-    : adjustRating(newMovie, seenMovie, false);
-
-      
-      // Update existing movie rating
-      const updatedSeen = seen.map(m => 
-        m.id === seenMovie.id ? updatedSeenMovie : m
-      );
-      
-      // Add new movie to seen list if not already there
-      if (!seen.some(m => m.id === updatedNewMovie.id)) {
-        onAddToSeen(updatedNewMovie);
-      }
-      
-      // Save the action for potential undo
-      setLastAction({
-        type: 'comparison',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie},
-        winnerIsSeenMovie: false
-      });
+      markMovieAsCompared(newMovie.id);
     }
     
-    // Fetch the next comparison
-    setNewMovie(null);
-    setSeenMovie(null);
-    setLoading(true);
-    fetchRandomMovie();
-  }, [seenMovie, newMovie, seen, setSeen, adjustRating, fetchRandomMovie, markMovieAsCompared, comparisonPattern, onAddToSeen]);
+    safeSetState(setLastAction, {
+      type: isKnownVsKnown ? 'known_comparison' : 'comparison',
+      seenMovie: {...seenMovie},
+      newMovie: {...newMovie},
+      winnerIsSeenMovie: false
+    });
+    
+    safeSetState(setNewMovie, null);
+    safeSetState(setSeenMovie, null);
+    safeSetState(setLoading, true);
+    
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchRandomMovie();
+      }
+    }, 100);
+  }, [seenMovie, newMovie, seen, adjustRating, updateMovieRating, fetchRandomMovie, markMovieAsCompared, safeSetState]);
 
-  // Handle user hasn't seen the new movie
   const handleUnseen = useCallback(() => {
-    if (isLoadingRef.current || !seenMovie || !newMovie) {
+    if (isLoadingRef.current || !seenMovie || !newMovie || !isMountedRef.current) {
       console.log('Ignoring click while loading or missing movies');
       return;
     }
     
-    // Check if this is a known vs known comparison
     const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
     
     if (isKnownVsKnown) {
-      // Cannot mark a known movie as unseen, show an alert
       Alert.alert(
         'Already Rated',
         'This movie is already in your rated list. You can\'t add it to watchlist.',
@@ -1097,206 +1311,142 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
       return;
     }
     
-    // Mark the movie as compared
-    markMovieAsCompared(newMovie.id);
-    
-    // Add to watchlist
     markMovieAsCompared(newMovie.id);
     onAddToUnseen(newMovie);
     
-    // Save action for undo
-    setLastAction({
+    isLoadingRef.current = false;
+    
+    safeSetState(setLastAction, {
       type: 'unseen',
       movie: {...newMovie}
     });
     
-    // Fetch the next comparison
-    setNewMovie(null);
-    setSeenMovie(null);
-    setLoading(true);
-    fetchRandomMovie();
-  }, [newMovie, onAddToUnseen, fetchRandomMovie, markMovieAsCompared, seenMovie, comparisonPattern, seen]);
+    safeSetState(setNewMovie, null);
+    safeSetState(setSeenMovie, null);
+    safeSetState(setLoading, true);
+    
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchRandomMovie();
+      }
+    }, 100);
+  }, [newMovie, onAddToUnseen, fetchRandomMovie, markMovieAsCompared, seenMovie, seen, safeSetState]);
 
-  // Handle user skipping this comparison
   const handleSkip = useCallback(() => {
-    if (isLoadingRef.current || !seenMovie || !newMovie) {
+    if (isLoadingRef.current || !seenMovie || !newMovie || !isMountedRef.current) {
       console.log('Ignoring click while loading or missing movies');
       return;
     }
     
-    // Always mark the unknown movie as compared, even in Known vs Known mode
-    if (comparisonPattern !== 4 || !seen.some(m => m.id === newMovie.id)) {
+    const isKnownVsKnown = comparisonPattern === 4 && seen.some(m => m.id === newMovie.id);
+    
+    isLoadingRef.current = false;
+    
+    if (isKnownVsKnown) {
+      safeSetState(setComparisonCount, prev => prev + 1);
+      safeSetState(setComparisonPattern, prev => (prev + 1) % 5);
+    } else {
       markMovieAsCompared(newMovie.id);
     }
     
-    // Save action for undo
-    setLastAction({
+    safeSetState(setLastAction, {
       type: 'skip',
       seenMovie: {...seenMovie},
       newMovie: {...newMovie},
-      isKnownVsKnown: comparisonPattern === 4 && seen.some(m => m.id === newMovie.id)
+      isKnownVsKnown: isKnownVsKnown
     });
     
-    // Just fetch a new comparison
-    setNewMovie(null);
-    setSeenMovie(null);
-    setLoading(true);
-    fetchRandomMovie();
-  }, [seenMovie, newMovie, fetchRandomMovie, markMovieAsCompared, comparisonPattern, seen]);
+    safeSetState(setNewMovie, null);
+    safeSetState(setSeenMovie, null);
+    safeSetState(setLoading, true);
+    
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchRandomMovie();
+      }
+    }, 100);
+  }, [seenMovie, newMovie, fetchRandomMovie, markMovieAsCompared, comparisonPattern, seen, safeSetState]);
 
-  // Handle tough choice
   const handleToughChoice = useCallback(() => {
-    if (isLoadingRef.current || !seenMovie || !newMovie) {
+    if (isLoadingRef.current || !seenMovie || !newMovie || !isMountedRef.current) {
       console.log('Ignoring click while loading or missing movies');
       return;
     }
     
-    // Check if this is a known vs known comparison
+    console.log('=== TOUGH CHOICE ===');
+    
     const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
+    let newSeenRating, newMovieRating;
+    
+    isLoadingRef.current = false;
     
     if (isKnownVsKnown) {
-      // For known vs known, calculate the average rating and apply to both
       const avgRating = (seenMovie.userRating + newMovie.userRating) / 2;
+      newSeenRating = Math.min(10, Math.max(1, avgRating + 0.05));
+      newMovieRating = Math.min(10, Math.max(1, avgRating - 0.05));
       
-      // Slight difference to keep them distinct
-      const updatedSeenMovie = {
-        ...seenMovie,
-        userRating: Math.min(10, Math.max(1, avgRating + 0.05)),
-        eloRating: Math.min(1000, Math.max(100, (avgRating + 0.05) * 10))
-      };
-      
-      const updatedNewMovie = {
-        ...newMovie,
-        userRating: Math.min(10, Math.max(1, avgRating - 0.05)),
-        eloRating: Math.min(1000, Math.max(100, (avgRating - 0.05) * 10))
-      };
-      
-      // Update both movies in the seen list
-      const updatedSeen = seen.map(m => {
-        if (m.id === seenMovie.id) return updatedSeenMovie;
-        if (m.id === newMovie.id) return updatedNewMovie;
-        return m;
-      });
-      
-      // Save action for undo
-      setLastAction({
-        type: 'tough_known',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie}
-      });
-      
-      setSeen(updatedSeen);
+      safeSetState(setComparisonCount, prev => prev + 1);
+      safeSetState(setComparisonPattern, prev => (prev + 1) % 5);
     } else {
-      // Mark the movie as compared
       markMovieAsCompared(newMovie.id);
       
-      // Determine which movie has the lower rating
-      const lowerRatedMovie = seenMovie.userRating <= newMovie.score ? seenMovie : newMovie;
-      const higherRatedMovie = lowerRatedMovie === seenMovie ? newMovie : seenMovie;
+      const averageRating = (seenMovie.userRating + (newMovie.userRating || newMovie.score)) / 2;
       
-      // Small boost for the lower-rated movie
-      const averageRating = (seenMovie.userRating + newMovie.score) / 2;
+      const seenRating = seenMovie.userRating;
+      const newRating = newMovie.userRating || newMovie.score;
       
-      let updatedSeenMovie, updatedNewMovie;
-      
-      if (lowerRatedMovie === seenMovie) {
-        // Seen movie gets a small boost as the lower-rated one
-        const newSeenRating = Math.min(10, Math.max(1, averageRating + 0.1));
-        
-        updatedSeenMovie = {
-          ...seenMovie,
-          userRating: newSeenRating,
-          eloRating: newSeenRating * 10
-        };
-        
-        // New movie gets added with a rating just below the seen movie's adjusted rating
-        const newRating = Math.max(1, Math.min(10, averageRating - 0.1));
-        
-        updatedNewMovie = {
-          ...newMovie,
-          userRating: newRating,
-          eloRating: newRating * 10
-        };
+      if (seenRating <= newRating) {
+        newSeenRating = Math.min(10, Math.max(1, averageRating + 0.1));
+        newMovieRating = Math.max(1, Math.min(10, averageRating - 0.1));
       } else {
-        // New movie is lower-rated, rate it slightly higher than its original score
-        const newMovieRating = Math.min(10, Math.max(1, averageRating + 0.1));
-        
-        updatedNewMovie = {
-          ...newMovie,
-          userRating: newMovieRating,
-          eloRating: newMovieRating * 10
-        };
-        
-        // Seen movie gets rated slightly lower
-        const seenMovieRating = Math.max(1, Math.min(10, averageRating - 0.1));
-        
-        updatedSeenMovie = {
-          ...seenMovie,
-          userRating: seenMovieRating,
-          eloRating: seenMovieRating * 10
-        };
+        newMovieRating = Math.min(10, Math.max(1, averageRating + 0.1));
+        newSeenRating = Math.max(1, Math.min(10, averageRating - 0.1));
       }
-      
-      // Save action for undo
-      setLastAction({
-        type: 'tough',
-        seenMovie: {...seenMovie},
-        newMovie: {...newMovie}
-      });
-      
-      // Update seen movie in the list
-      const updatedSeen = seen.map(m => 
-        m.id === seenMovie.id ? updatedSeenMovie : m
-      );
-      
-      // Add new movie to seen list
-      onAddToSeen(updatedNewMovie);
     }
     
-    // Fetch the next comparison
-    setNewMovie(null);
-    setSeenMovie(null);
-    setLoading(true);
-    fetchRandomMovie();
-  }, [seenMovie, newMovie, seen, setSeen, fetchRandomMovie, markMovieAsCompared, comparisonPattern, onAddToSeen]);
+    updateMovieRating(seenMovie, newSeenRating);
+    updateMovieRating(newMovie, newMovieRating);
+    
+    safeSetState(setLastAction, {
+      type: isKnownVsKnown ? 'tough_known' : 'tough',
+      seenMovie: {...seenMovie},
+      newMovie: {...newMovie}
+    });
+    
+    safeSetState(setNewMovie, null);
+    safeSetState(setSeenMovie, null);
+    safeSetState(setLoading, true);
+    
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        fetchRandomMovie();
+      }
+    }, 100);
+  }, [seenMovie, newMovie, seen, updateMovieRating, fetchRandomMovie, markMovieAsCompared, safeSetState]);
 
-  // Handle undo last action
   const handleUndo = () => {
     if (!lastAction || isLoadingRef.current) return;
     
-    let filteredSeen;
-    let restoredSeen;
-    let filteredUnseen;
+    let filteredSeen, restoredSeen, filteredUnseen;
     
     switch (lastAction.type) {
       case 'comparison':
-        // Remove the new movie from the seen list
         filteredSeen = seen.filter(m => m.id !== lastAction.newMovie.id);
-        
-        // Restore the rating of the seen movie
         restoredSeen = filteredSeen.map(m => 
           m.id === lastAction.seenMovie.id ? lastAction.seenMovie : m
         );
         
         setSeen(restoredSeen);
-        
-        // Remove from compared movies
         setComparedMovies(prev => prev.filter(id => id !== lastAction.newMovie.id));
-        
-        // Decrement comparison count
         setComparisonCount(prev => Math.max(0, prev - 1));
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
         
-        // Roll back comparison pattern
-        setComparisonPattern(prev => (prev - 1 + 5) % 5); // 4,3,2,1,0,4,3,...
-        
-        // Restore the movies for a new comparison
         setSeenMovie(lastAction.seenMovie);
         setNewMovie(lastAction.newMovie);
         setLoading(false);
         break;
         
       case 'known_comparison':
-        // For known vs known, restore both ratings
         restoredSeen = seen.map(m => {
           if (m.id === lastAction.seenMovie.id) return lastAction.seenMovie;
           if (m.id === lastAction.newMovie.id) return lastAction.newMovie;
@@ -1304,86 +1454,58 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
         });
         
         setSeen(restoredSeen);
-        
-        // Roll back comparison pattern
-        setComparisonPattern(prev => (prev - 1 + 5) % 5); // 4,3,2,1,0,4,3,...
-        
-        // Restore the movies for a new comparison
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
         setSeenMovie(lastAction.seenMovie);
         setNewMovie(lastAction.newMovie);
         setLoading(false);
         break;
         
       case 'unseen':
-        // Remove the movie from unseen/watchlist
         filteredUnseen = unseen.filter(m => m.id !== lastAction.movie.id);
         onAddToUnseen(filteredUnseen);
-        
-        // Remove from compared movies
         setComparedMovies(prev => prev.filter(id => id !== lastAction.movie.id));
-        
-        // Decrement comparison count
         setComparisonCount(prev => Math.max(0, prev - 1));
-        
-        // Roll back comparison pattern
-        setComparisonPattern(prev => (prev - 1 + 5) % 5); // 4,3,2,1,0,4,3,...
-        
-        // Restore the movie for comparison
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
         setNewMovie(lastAction.movie);
         setLoading(false);
         break;
         
       case 'skip':
         if (!lastAction.isKnownVsKnown) {
-          // Remove from compared movies
           setComparedMovies(prev => prev.filter(id => id !== lastAction.newMovie.id));
-          
-          // Decrement comparison count
           setComparisonCount(prev => Math.max(0, prev - 1));
         }
         
-        // Roll back comparison pattern
-        setComparisonPattern(prev => (prev - 1 + 5) % 5); // 4,3,2,1,0,4,3,...
-        
-        // Restore the movies for comparison
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
         setSeenMovie(lastAction.seenMovie);
         setNewMovie(lastAction.newMovie);
         setLoading(false);
         break;
         
       case 'tough':
+        filteredSeen = seen.filter(m => m.id !== lastAction.newMovie.id);
+        restoredSeen = filteredSeen.map(m => 
+          m.id === lastAction.seenMovie.id ? lastAction.seenMovie : m
+        );
+        
+        setSeen(restoredSeen);
+        setComparedMovies(prev => prev.filter(id => id !== lastAction.newMovie.id));
+        setComparisonCount(prev => Math.max(0, prev - 1));
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
+        setSeenMovie(lastAction.seenMovie);
+        setNewMovie(lastAction.newMovie);
+        setLoading(false);
+        break;
+        
       case 'tough_known':
-        if (lastAction.type === 'tough') {
-          // Remove the new movie from seen
-          filteredSeen = seen.filter(m => m.id !== lastAction.newMovie.id);
-          
-          // Restore the rating of the seen movie
-          restoredSeen = filteredSeen.map(m => 
-            m.id === lastAction.seenMovie.id ? lastAction.seenMovie : m
-          );
-          
-          setSeen(restoredSeen);
-          
-          // Remove from compared movies
-          setComparedMovies(prev => prev.filter(id => id !== lastAction.newMovie.id));
-          
-          // Decrement comparison count
-          setComparisonCount(prev => Math.max(0, prev - 1));
-        } else {
-          // For tough_known, restore both ratings
-          restoredSeen = seen.map(m => {
-            if (m.id === lastAction.seenMovie.id) return lastAction.seenMovie;
-            if (m.id === lastAction.newMovie.id) return lastAction.newMovie;
-            return m;
-          });
-          
-          setSeen(restoredSeen);
-        }
+        restoredSeen = seen.map(m => {
+          if (m.id === lastAction.seenMovie.id) return lastAction.seenMovie;
+          if (m.id === lastAction.newMovie.id) return lastAction.newMovie;
+          return m;
+        });
         
-        // Roll back comparison pattern
-        setComparisonPattern(prev => (prev - 1 + 5) % 5); // 4,3,2,1,0,4,3,...
-        
-        // Restore the movies for comparison
+        setSeen(restoredSeen);
+        setComparisonPattern(prev => (prev - 1 + 5) % 5);
         setSeenMovie(lastAction.seenMovie);
         setNewMovie(lastAction.newMovie);
         setLoading(false);
@@ -1393,7 +1515,6 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
         break;
     }
     
-    // Clear the last action
     setLastAction(null);
   };
 
@@ -1405,52 +1526,58 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     isLoadingRef.current = false;
     fetchRandomMovie();
   }, [fetchRandomMovie]);
-  
-  // Handle baseline complete acknowledgment
-  const handleBaselineCompleteAcknowledge = useCallback(() => {
-    setShowBaselineCompleteModal(false);
-  }, []);
 
-  const getPosterUrl = path => `https://image.tmdb.org/t/p/w342${path}`;
+  const getPosterUrl = path =>
+    path
+      ? `https://image.tmdb.org/t/p/w342${path}`
+      : `https://image.tmdb.org/t/p/w342`;
 
-  // Loading state
+  // Loading state UI
   if (loading) {
     return (
-      <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
+      <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: colors.background }]}>
         <View style={stateStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={isDarkMode ? '#FFD700' : '#4B0082'} />
-          <Text style={[stateStyles.loadingText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-            {baselineComplete ? 'Finding movies tailored to your taste...' : 'Loading movies for comparison...'}
-          </Text>
-          <Text style={[styles.progressText, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
-            {!baselineComplete ? 
-              `Progress: ${Math.min(comparedMovies.length, uniqueBaselineMovies.length)}/${uniqueBaselineMovies.length} movies` :
-              'Custom recommendations enabled'
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[stateStyles.loadingText, { color: colors.subText }]}>
+            {isLoadingFilteredPool 
+              ? 'Building filtered movie pool...' 
+              : baselineComplete 
+                ? 'Finding movies tailored to your taste...' 
+                : 'Loading movies for comparison...'
             }
           </Text>
+          {hasActiveFilters && (
+            <Text style={[stateStyles.loadingText, { color: colors.subText, fontSize: 12, marginTop: 5 }]}>
+              Active filters: {[
+                selectedGenres.length > 0 && `${selectedGenres.length} genres`,
+                selectedDecades.length > 0 && `${selectedDecades.length} decades`,
+                selectedStreamingServices.length > 0 && `${selectedStreamingServices.length} services`
+              ].filter(Boolean).join(', ')}
+            </Text>
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
-  // Error state
+  // Error state UI
   if (error) {
     return (
-      <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
-        <View style={[stateStyles.errorContainer, { backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5' }]}>
-          <Ionicons name="information-circle-outline" size={48} color={isDarkMode ? '#FFD700' : '#4B0082'} />
-          <Text style={[stateStyles.errorText, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
+      <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={[stateStyles.errorContainer, { backgroundColor: colors.card }]}>
+          <Ionicons name="information-circle-outline" size={48} color={colors.accent} />
+          <Text style={[stateStyles.errorText, { color: colors.accent }]}>
             {error}
           </Text>
-          <Text style={[stateStyles.errorSubText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-            {seen.length < 3 ? 'Go to the Add Movie tab to rate more movies.' : 'This may be temporary. Try again or select a different genre.'}
+          <Text style={[stateStyles.errorSubText, { color: colors.subText }]}>
+            {seen.length < 3 ? 'Go to the Add Movie tab to rate more movies.' : 'This may be temporary. Try again or select a different filter combination.'}
           </Text>
           <TouchableOpacity
-            style={[stateStyles.retryButton, { backgroundColor: isDarkMode ? '#FFD700' : '#4B0082' }]}
+            style={[stateStyles.retryButton, { backgroundColor: colors.accent }]}
             onPress={handleRetry}
             activeOpacity={0.7}
           >
-            <Text style={[stateStyles.retryButtonText, { color: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
+            <Text style={[stateStyles.retryButtonText, { color: colors.background }]}>
               Try Again
             </Text>
           </TouchableOpacity>
@@ -1459,39 +1586,29 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
     );
   }
 
+  // Return early if movies aren't loaded yet
   if (!seenMovie || !newMovie) return null;
 
-  // Check if this is a known vs known comparison
+  // Check if this is a known vs known comparison for UI display
   const isKnownVsKnown = seen.some(m => m.id === newMovie.id);
 
   // Main UI
   return (
-    <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
-      <View
-        style={[
-          headerStyles.screenHeader,
-          { backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5', borderBottomColor: isDarkMode ? '#8A2BE2' : '#E0E0E0' },
-        ]}
-      >
-        <Text style={[headerStyles.screenTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}>
+    <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: colors.background }]}>
+      {/* Header section with themed gradient */}
+     <ThemedHeader mediaType={mediaType} isDarkMode={isDarkMode} theme={theme}>
+        <Text style={headerStyles.screenTitle}>
           {isKnownVsKnown ? 'Compare Your Ratings' : 
-            baselineComplete ? 'Movie Recommendations' : 'Movie Ratings'}
+            baselineComplete ? `${mediaType === 'movie' ? 'Movie' : 'TV Show'} Recommendations` : `${mediaType === 'movie' ? 'Movie' : 'TV Show'} Ratings`}
         </Text>
         <View style={styles.actionRow}>
-          {!baselineComplete && !isKnownVsKnown && (
-            <View style={styles.progressBadge}>
-              <Text style={styles.progressBadgeText}>
-                {Math.min(comparedMovies.length, uniqueBaselineMovies.length)}/{uniqueBaselineMovies.length}
-              </Text>
-            </View>
-          )}
           {lastAction && (
             <TouchableOpacity
               style={styles.actionButton}
               onPress={handleUndo}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-undo" size={24} color={isDarkMode ? '#FFD700' : '#4B0082'} />
+              <Ionicons name="arrow-undo" size={24} color={colors.accent} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -1499,92 +1616,179 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
             onPress={openFilterModal}
             activeOpacity={0.7}
           >
-            <Ionicons name="filter" size={24} color={isDarkMode ? '#FFD700' : '#4B0082'} />
-            {selectedGenre && (
-              <View style={styles.filterBadge} />
-            )}
+            <Ionicons name="filter" size={24} color={colors.accent} />
+           {(selectedGenres.length > 0 || selectedDecades.length > 0 || selectedStreamingServices.length > 0) && (
+          <View style={[styles.filterBadge, { backgroundColor: colors.secondary }]} />
+        )}
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleReset}
             activeOpacity={0.7}
           >
-            <Ionicons name="refresh" size={24} color={isDarkMode ? '#FFD700' : '#4B0082'} />
+            <Ionicons name="refresh" size={24} color={colors.accent} />
           </TouchableOpacity>
         </View>
-      </View>
+      </ThemedHeader>
 
-      <View style={[compareStyles.compareContainer, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
+      {/* Main comparison content */}
+      <View style={compareStyles.compareContainer}>
         <View style={compareStyles.compareContent}>
-          <Text style={[compareStyles.compareTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}>
-            {isKnownVsKnown ? 'Which movie do you prefer?' : 'Which movie was better?'}
+          <Text style={compareStyles.compareTitle}>
+            {isKnownVsKnown ? `Which ${mediaType === 'movie' ? 'movie' : 'show'} do you prefer?` : `Which ${mediaType === 'movie' ? 'movie' : 'show'} was better?`}
           </Text>
           
-          {/* Movie comparison UI - properly showing two side-by-side movies */}
           <View style={compareStyles.compareMovies}>
-            {/* Left side: Known movie (the one user has already rated) */}
+            {/* Left Movie */}
             <TouchableOpacity
-              style={[compareStyles.posterContainer, { backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5' }]}
+              style={compareStyles.posterContainer}
               onPress={handleSeenWin}
               activeOpacity={0.7}
             >
               <Image
-                source={{ uri: getPosterUrl(seenMovie.poster) }}
+                source={{ uri: getPosterUrl(seenMovie.poster || seenMovie.poster_path) }}
                 style={compareStyles.poster}
                 resizeMode="cover"
               />
               <View style={compareStyles.posterOverlay}>
-                <Text
-                  style={[movieCardStyles.movieTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}
-                  numberOfLines={2}
+                <Text 
+  style={compareStyles.movieTitle} 
+  numberOfLines={1}
+  adjustsFontSizeToFit={true}
+  minimumFontScale={10}
+  ellipsizeMode="tail"
+  allowFontScaling={false}
+>
+  {seenMovie.title}
+</Text>
+                
+                {/* Streaming service icons - limit to 3 */}
+                <View style={compareStyles.streamingContainer}>
+                  {seenMovie.streamingServices && seenMovie.streamingServices.slice(0, 3).map((service) => {
+                    const serviceData = streamingProviders.find(s => s.id === service.provider_id);
+                    if (serviceData && serviceData.logo_url) {
+                      return (
+                        <Image
+                          key={service.provider_id}
+                          source={{ uri: serviceData.logo_url }}
+                          style={[
+                            compareStyles.streamingIcon,
+                            service.paymentType === 'paid' && styles.paidIcon,
+                            service.paymentType === 'free' && styles.freeIcon
+                          ]}
+                          resizeMode="contain"
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </View>
+                
+                <Text 
+                  style={compareStyles.ratingTag}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.8}
                 >
-                  {seenMovie.title}
-                </Text>
-                <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
                   Your rating: {seenMovie.userRating.toFixed(1)}
                 </Text>
-                <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                  {(seenMovie.genre_ids || seenMovie.genreIds || []).map(id => genres[id] || 'Unknown').join(', ')}
+                <Text 
+                  style={compareStyles.genreText} 
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                  ellipsizeMode="tail"
+                >
+                  {(seenMovie.genre_ids || seenMovie.genreIds || [])
+                    .slice(0, 2) // Limit to 2 genres
+                    .map(id => genres[id] || 'Unknown')
+                    .filter(Boolean)
+                    .join(', ')}
                 </Text>
-              </View>
-            </TouchableOpacity>
+              </View>            </TouchableOpacity>
             
-            {/* Middle VS divider */}
+            {/* VS Section */}
             <View style={compareStyles.vsContainer}>
-              <Text style={[compareStyles.vsText, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
-                VS
-              </Text>
+              <Text style={compareStyles.vsText}>VS</Text>
             </View>
             
-            {/* Right side: New movie (or second known movie in "known vs known" comparisons) */}
+            {/* Right Movie */}
             <TouchableOpacity
-              style={[compareStyles.posterContainer, { backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5' }]}
+              style={compareStyles.posterContainer}
               onPress={handleNewWin}
               activeOpacity={0.7}
             >
               <Image
-                source={{ uri: getPosterUrl(newMovie.poster) }}
+                source={{ uri: getPosterUrl(newMovie.poster || newMovie.poster_path) }}
                 style={compareStyles.poster}
                 resizeMode="cover"
               />
-              <View style={compareStyles.posterOverlay}>
-                <Text
-                  style={[movieCardStyles.movieTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}
-                  numberOfLines={2}
-                >
-                  {newMovie.title}
-                </Text>
+                
+               <View style={compareStyles.posterOverlay}>
+  <Text 
+    style={compareStyles.movieTitle} 
+    numberOfLines={1}
+    adjustsFontSizeToFit={true}
+    minimumFontScale={10}
+    ellipsizeMode="tail"
+    allowFontScaling={false}
+  >
+    {newMovie.title}
+  </Text>
+                
+                {/* Streaming service icons - limit to 3 */}
+                <View style={compareStyles.streamingContainer}>
+                  {newMovie.streamingServices && newMovie.streamingServices.slice(0, 3).map((service) => {
+                    const serviceData = streamingProviders.find(s => s.id === service.provider_id);
+                    if (serviceData && serviceData.logo_url) {
+                      return (
+                        <Image
+                          key={service.provider_id}
+                          source={{ uri: serviceData.logo_url }}
+                          style={[
+                            compareStyles.streamingIcon,
+                            service.paymentType === 'paid' && styles.paidIcon,
+                            service.paymentType === 'free' && styles.freeIcon
+                          ]}
+                          resizeMode="contain"
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </View>
+                
                 {isKnownVsKnown || seen.some(m => m.id === newMovie.id) ? (
-                  <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
+                  <Text 
+                    style={compareStyles.ratingTag}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
+                  >
                     Your rating: {newMovie.userRating.toFixed(1)}
                   </Text>
                 ) : (
-                  <Text style={[compareStyles.ratingTag, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
-                    TMDb: {newMovie.score.toFixed(1)} ({newMovie.voteCount} votes)
+                  <Text 
+                    style={compareStyles.ratingTag}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
+                  >
+                    TMDb: {newMovie.score.toFixed(1)} ({newMovie.release_year || 'Unknown'})
                   </Text>
                 )}
-                <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-                  {(newMovie.genre_ids || newMovie.genreIds || []).map(id => genres[id] || 'Unknown').join(', ')}
+                <Text 
+                  style={compareStyles.genreText} 
+                  numberOfLines={1}
+                  adjustsFontSizeToFit={true}
+                  minimumFontScale={0.7}
+                  ellipsizeMode="tail"
+                >
+                  {(newMovie.genre_ids || newMovie.genreIds || [])
+                    .slice(0, 2) // Limit to 2 genres
+                    .map(id => genres[id] || 'Unknown')
+                    .filter(Boolean)
+                    .join(', ')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -1592,34 +1796,33 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
           
           <View style={compareStyles.actionButtons}>
             <TouchableOpacity
-              style={[compareStyles.toughButton, { backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5', borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
+              style={compareStyles.toughButton}
               onPress={handleToughChoice}
               activeOpacity={0.7}
             >
-              <Text style={[compareStyles.toughButtonText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
+              <Text style={compareStyles.toughButtonText}>
                 Too tough to decide
               </Text>
             </TouchableOpacity>
             
-            {/* Only show "Add to watchlist" if this isn't a Known vs Known comparison */}
             {!isKnownVsKnown && !seen.some(m => m.id === newMovie.id) && (
               <TouchableOpacity
-                style={[compareStyles.unseenButton, { backgroundColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
+                style={compareStyles.unseenButton}
                 onPress={handleUnseen}
                 activeOpacity={0.7}
               >
-                <Text style={[compareStyles.unseenButtonText, { color: isDarkMode ? '#F5F5F5' : '#FFFFFF' }]}>
+                <Text style={compareStyles.unseenButtonText}>
                   Add to watchlist
                 </Text>
               </TouchableOpacity>
             )}
             
             <TouchableOpacity
-              style={[buttonStyles.skipButton, { borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
+              style={compareStyles.skipButton}
               onPress={handleSkip}
               activeOpacity={0.7}
             >
-              <Text style={[buttonStyles.skipButtonText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
+              <Text style={compareStyles.skipButtonText}>
                 Skip
               </Text>
             </TouchableOpacity>
@@ -1627,189 +1830,309 @@ const adjustRating = useCallback((winner, loser, winnerIsSeenMovie) => {
         </View>
       </View>
       
-      {/* Filter Modal */}
+     {/* Enhanced Filter Modal */}
       <Modal
         visible={filterModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={cancelFilters}
       >
-        <View style={[modalStyles.modalOverlay, styles.modalOverlay]}>
-          <View style={[
-            modalStyles.modalContent,
-            styles.modalContent,
-            { backgroundColor: isDarkMode ? '#4B0082' : '#FFFFFF' }
-          ]}>
-            <Text style={[
-              modalStyles.modalTitle,
-              { color: isDarkMode ? '#F5F5F5' : '#333' }
-            ]}>
-              Filter Movies
-            </Text>
-            
-            {/* Genre Filter */}
-            <View style={styles.filterSection}>
-              <Text style={[
-                styles.sectionTitle,
-                { color: isDarkMode ? '#F5F5F5' : '#333' }
-              ]}>
-                Filter by Genre
-              </Text>
+<View style={[modalStyles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+          <View
+            style={{
+              width: '90%',
+              height: '80%',
+              borderRadius: colors.border.radius,
+              overflow: 'hidden'
+            }}
+          >
+            <LinearGradient
+              colors={colors.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flex: 1,
+                padding: 20
+              }}
+            >
               
-              <TouchableOpacity
-                style={[
-                  styles.genreButton,
-                  { 
-                    backgroundColor: tempGenre === null 
-                      ? (isDarkMode ? '#8A2BE2' : '#4B0082') 
-                      : 'transparent',
-                    borderColor: isDarkMode ? '#8A2BE2' : '#4B0082'
-                  }
-                ]}
-                onPress={() => setTempGenre(null)}
+              {/* Modal Header */}
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 20,
+                paddingBottom: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(255,255,255,0.3)'
+              }}>
+                <Text style={{
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  color: colors.text
+                }}>
+                  Filter Movies
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
+                    borderRadius: 8
+                  }}
+                  onPress={clearAllFilters}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}>
+                    Clear All
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Scrollable Content */}
+              <ScrollView 
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
               >
+              
+              {/* Genre Filter Section */}
+              <View style={{ marginBottom: 25 }}>
                 <Text style={[
-                  styles.genreButtonText,
+                  modalStyles.detailTitle,
                   { 
-                    color: tempGenre === null 
-                      ? '#FFFFFF' 
-                      : (isDarkMode ? '#D3D3D3' : '#666')
+                    fontSize: 16,
+                    marginBottom: 12,
+                    textAlign: 'left',
+                    color: colors.text
                   }
                 ]}>
-                  All Genres
+                  Genres ({tempGenres.length} selected)
                 </Text>
-              </TouchableOpacity>
-              
-              <ScrollView 
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.genreScrollContent}
-              >
-                {Object.entries(genres)
-                  .filter(([id, name]) => name) // Filter out undefined genres
-                  .map(([id, name]) => (
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 8
+                }}>
+                  {Object.entries({
+                    28: 'Action',
+                    12: 'Adventure', 
+                    16: 'Animation',
+                    35: 'Comedy',
+                    80: 'Crime',
+                    99: 'Documentary',
+                    18: 'Drama',
+                    10751: 'Family',
+                    14: 'Fantasy',
+                    36: 'History',
+                    27: 'Horror',
+                    10402: 'Music',
+                    9648: 'Mystery',
+                    10749: 'Romance',
+                    878: 'Science Fiction',
+                    10770: 'TV Movie',
+                    53: 'Thriller',
+                    10752: 'War',
+                    37: 'Western'
+                  }).map(([id, name]) => (
                     <TouchableOpacity
                       key={id}
-                      style={[
-                        styles.genreButton,
-                        { 
-                          backgroundColor: tempGenre === id 
-                            ? (isDarkMode ? '#8A2BE2' : '#4B0082') 
-                            : 'transparent',
-                          borderColor: isDarkMode ? '#8A2BE2' : '#4B0082'
-                        }
-                      ]}
-                      onPress={() => setTempGenre(id)}
+                      style={{
+                        backgroundColor: tempGenres.includes(id)
+                          ? 'rgba(255,255,255,0.3)' 
+                          : 'rgba(255,255,255,0.1)',
+                        borderColor: 'rgba(255,255,255,0.4)',
+                        borderWidth: 1,
+                        borderRadius: colors.border.radius,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginBottom: 8
+                      }}
+                      onPress={() => toggleGenre(id)}
+                      activeOpacity={0.7}
                     >
-                      <Text style={[
-                        styles.genreButtonText,
-                        { 
-                          color: tempGenre === id 
-                            ? '#FFFFFF' 
-                            : (isDarkMode ? '#D3D3D3' : '#666')
-                        }
-                      ]}>
+                      <Text style={{
+                        color: colors.text,
+                        fontSize: 13,
+                        fontWeight: '500'
+                      }}>
                         {name}
                       </Text>
                     </TouchableOpacity>
-                  ))
-                }
-              </ScrollView>
-            </View>
-            
-            {/* Action Buttons */}
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.applyButton,
-                  { backgroundColor: isDarkMode ? '#FFD700' : '#4B0082' }
-                ]}
-                onPress={applyFilters}
-              >
+                  ))}
+                </View>
+              </View>
+
+              {/* Decade Filter Section */}
+              <View style={{ marginBottom: 25 }}>
                 <Text style={[
-                  styles.applyButtonText,
-                  { color: isDarkMode ? '#4B0082' : '#FFFFFF' }
+                  modalStyles.detailTitle,
+                  { 
+                    fontSize: 16,
+                    marginBottom: 12,
+                    textAlign: 'left',
+                    color: colors.text
+                  }
                 ]}>
-                  Apply Filters
+                  Decades ({tempDecades.length} selected)
                 </Text>
-              </TouchableOpacity>
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 8
+                }}>
+                  {DECADES.map((decade) => (
+                    <TouchableOpacity
+                      key={decade.value}
+                      style={{
+                        backgroundColor: tempDecades.includes(decade.value)
+                          ? 'rgba(255,255,255,0.3)' 
+                          : 'rgba(255,255,255,0.1)',
+                        borderColor: 'rgba(255,255,255,0.4)',
+                        borderWidth: 1,
+                        borderRadius: colors.border.radius,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginBottom: 8
+                      }}
+                      onPress={() => toggleDecade(decade.value)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={{
+                        color: colors.text,
+                        fontSize: 13,
+                        fontWeight: '500'
+                      }}>
+                        {decade.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Streaming Services Filter Section */}
+              <View style={{ marginBottom: 25 }}>
+                <Text style={[
+                  modalStyles.detailTitle,
+                  { 
+                    fontSize: 16,
+                    marginBottom: 12,
+                    textAlign: 'left',
+                    color: colors.text
+                  }
+                ]}>
+                  Available On ({tempStreamingServices.length} selected)
+                </Text>
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 8
+                }}>
+                  {[
+                    { id: 8, name: 'Netflix' },
+                    { id: 9, name: 'Prime Video' },
+                    { id: 15, name: 'Hulu' },
+                    { id: 337, name: 'Disney+' },
+                    { id: 350, name: 'Apple TV+' },
+                    { id: 384, name: 'HBO Max' },
+                    { id: 387, name: 'Peacock' }
+                  ].map((service) => (
+                    <TouchableOpacity
+                      key={service.id}
+                      style={{
+                        backgroundColor: tempStreamingServices.includes(service.id.toString())
+                          ? 'rgba(255,255,255,0.3)' 
+                          : 'rgba(255,255,255,0.1)',
+                        borderColor: 'rgba(255,255,255,0.4)',
+                        borderWidth: 1,
+                        borderRadius: colors.border.radius,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginBottom: 8,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                      }}
+                      onPress={() => toggleStreamingService(service.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={{
+                        color: colors.text,
+                        fontSize: 13,
+                        fontWeight: '500'
+                      }}>
+                        {service.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
+              </ScrollView>
+            
+            {/* Modal Action Buttons */}
+            <View style={{
+                flexDirection: 'row',
+                marginTop: 20,
+                paddingTop: 15,
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(255,255,255,0.3)'
+              }}>
               <TouchableOpacity
-                style={[
-                  styles.cancelButton,
-                  { borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }
-                ]}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: 'rgba(255,255,255,0.4)',
+                  borderWidth: 1,
+                  borderRadius: colors.border.radius,
+                  paddingVertical: 12,
+                  paddingHorizontal: 20,
+                  flex: 1,
+                  marginRight: 8,
+                  alignItems: 'center'
+                }}
                 onPress={cancelFilters}
               >
-                <Text style={[
-                  styles.cancelButtonText,
-                  { color: isDarkMode ? '#D3D3D3' : '#666' }
-                ]}>
+                <Text style={{
+                  color: colors.text,
+                  fontSize: 16,
+                  fontWeight: '600'
+                }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: colors.accent,
+                  borderRadius: colors.border.radius,
+                  paddingVertical: 12,
+                  paddingHorizontal: 20,
+                  flex: 1,
+                  marginLeft: 8,
+                  alignItems: 'center'
+                }}
+                onPress={applyFilters}
+              >
+                <Text style={{
+                  color: colors.background,
+                  fontSize: 16,
+                  fontWeight: '600'
+                }}>
+                  Apply Filters
+                </Text>
+              </TouchableOpacity>
             </View>
+            
+            {/* Close button */}
+              <TouchableOpacity 
+                onPress={cancelFilters} 
+                style={{ alignItems: 'center', paddingTop: 15 }}
+              >
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>dismiss</Text>
+              </TouchableOpacity>
+            </LinearGradient>
           </View>
         </View>
       </Modal>
-      
-      {/* Baseline Complete Modal */}
-      <Modal
-        visible={showBaselineCompleteModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleBaselineCompleteAcknowledge}
-      >
-        <View style={[modalStyles.modalOverlay, styles.modalOverlay]}>
-          <View style={[
-            modalStyles.modalContent,
-            styles.modalContent,
-            { backgroundColor: isDarkMode ? '#4B0082' : '#FFFFFF' }
-          ]}>
-            <Ionicons 
-              name="checkmark-circle" 
-              size={64} 
-              color={isDarkMode ? '#FFD700' : '#4B0082'} 
-              style={styles.successIcon}
-            />
-            
-            <Text style={[
-              modalStyles.modalTitle,
-              { color: isDarkMode ? '#FFD700' : '#4B0082', fontSize: 24 }
-            ]}>
-              Baseline Complete!
-            </Text>
-            
-            <Text style={[
-              styles.completionText,
-              { color: isDarkMode ? '#F5F5F5' : '#333' }
-            ]}>
-              You've completed the baseline movie ratings. Congratulations!
-            </Text>
-            
-            <Text style={[
-              styles.completionSubtext,
-              { color: isDarkMode ? '#D3D3D3' : '#666' }
-            ]}>
-              From now on, movies will be recommended based on your personal preferences. The more movies you rate, the better your recommendations will become.
-            </Text>
-            
-            <TouchableOpacity
-              style={[
-                styles.continueButton,
-                { backgroundColor: isDarkMode ? '#FFD700' : '#4B0082' }
-              ]}
-              onPress={handleBaselineCompleteAcknowledge}
-            >
-              <Text style={[
-                styles.continueButtonText,
-                { color: isDarkMode ? '#4B0082' : '#FFFFFF' }
-              ]}>
-                Continue to Recommendations
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -1831,120 +2154,23 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF9500',
   },
-  modalOverlay: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
+  // Keep these icon styles:
+  freeIcon: {
+    borderColor: '#22C55E',
   },
-  modalContent: {
-    width: '90%',
-    maxHeight: '80%',
-    elevation: 10,
-    shadowOpacity: 0.5,
-    zIndex: 1001,
+  paidIcon: {
+    borderColor: '#FF4444',
   },
-  filterSection: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  genreScrollContent: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-  },
-  genreButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginRight: 8,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  genreButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  applyButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  applyButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  cancelButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  progressText: {
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  progressBadge: {
-    backgroundColor: '#FFD700',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginRight: 10,
-  },
-  progressBadgeText: {
-    color: '#4B0082',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  successIcon: {
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  completionText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  completionSubtext: {
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  continueButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  continueButtonText: {
-    fontWeight: '600',
-    fontSize: 16,
-  }
 });
+
 WildcardScreen.defaultProps = {
   seen: [],
   unseen: [],
-  genres: {}
+  genres: {},
+  skippedMovies: [],
+  addToSkippedMovies: () => {},
+  removeFromSkippedMovies: () => {}
 };
+
 export default WildcardScreen;
