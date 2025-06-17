@@ -9,10 +9,10 @@ import {
   TextInput, 
   Modal, 
   Animated,
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  FlatList
+  FlatList,
+  Keyboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import layoutStyles from '../../Styles/layoutStyles';
@@ -23,15 +23,22 @@ import modalStyles from '../../Styles/modalStyles';
 import ratingStyles from '../../Styles/ratingStyles';
 import stateStyles from '../../Styles/StateStyles';
 import movieCardStyles from '../../Styles/movieCardStyles';
+import { useMediaType } from '../../Navigation/TabNavigator';
 
 function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
+  const { mediaType } = useMediaType();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [newRating, setNewRating] = useState('');
   const [selectedGenreId, setSelectedGenreId] = useState(null);
   const slideAnim = useRef(new Animated.Value(300)).current;
 
-  const getPosterUrl = useCallback(path => `https://image.tmdb.org/t/p/w342${path}`, []);
+  const getPosterUrl = useCallback(path => {
+    if (!path) return 'https://via.placeholder.com/342x513?text=No+Poster';
+    // If path already includes https:// it's a full URL
+    if (path.startsWith('http')) return path;
+    return `https://image.tmdb.org/t/p/w342${path}`;
+  }, []);
   
   // Extract all unique genre IDs from movies for filter options
   const uniqueGenreIds = useMemo(() => {
@@ -44,7 +51,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
     return Array.from(genreSet);
   }, [movies]);
   
-  // Filter and sort movies by selected genre and rating
+  // Filter and sort movies/TV shows by selected genre and rating
   const filteredAndRankedMovies = useMemo(() => {
     let filtered = [...movies];
     
@@ -82,7 +89,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [slideAnim]); // Added slideAnim as dependency
+  }, [slideAnim]);
 
   const closeEditModal = useCallback(() => {
     Animated.timing(slideAnim, {
@@ -94,7 +101,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
       setSelectedMovie(null);
       setNewRating('');
     });
-  }, [slideAnim]); // Added slideAnim as dependency
+  }, [slideAnim]);
 
   const updateRating = useCallback(() => {
     const rating = parseFloat(newRating);
@@ -109,7 +116,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
     }
     onUpdateRating(selectedMovie.id, rating);
     closeEditModal();
-  }, [newRating, selectedMovie, onUpdateRating, closeEditModal, slideAnim]); // Added slideAnim as dependency
+  }, [newRating, selectedMovie, onUpdateRating, closeEditModal, slideAnim]);
 
   // Function to display rating correctly
   const displayRating = useCallback((movie) => {
@@ -170,9 +177,13 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
     return (
       <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF' }]}>
         <View style={stateStyles.emptyStateContainer}>
-          <Ionicons name="film-outline" size={64} color={isDarkMode ? '#D3D3D3' : '#A9A9A9'} />
+          <Ionicons 
+            name={mediaType === 'movie' ? "film-outline" : "tv-outline"} 
+            size={64} 
+            color={isDarkMode ? '#D3D3D3' : '#A9A9A9'} 
+          />
           <Text style={{ color: isDarkMode ? '#D3D3D3' : '#666', fontSize: 16, textAlign: 'center', marginTop: 16 }}>
-            You haven't ranked any movies yet.
+            You haven't ranked any {mediaType === 'movie' ? 'movies' : 'TV shows'} yet.
           </Text>
         </View>
       </SafeAreaView>
@@ -188,12 +199,15 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
         ]}
       >
         <Text style={[headerStyles.screenTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}>
-          Your Top Movies
+          Your Top {mediaType === 'movie' ? 'Movies' : 'TV Shows'}
         </Text>
       </View>
       
       {/* Genre Filter Section */}
-      <View style={styles.filterSection}>
+      <View style={[
+        styles.filterSection, 
+        { borderBottomColor: isDarkMode ? '#8A2BE2' : '#E0E0E0' }
+      ]}>
         <View style={styles.filterHeader}>
           <Text style={[styles.filterTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}>
             Filter by Genre
@@ -222,13 +236,13 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
         {selectedGenreId !== null && (
           <View style={styles.activeFilterIndicator}>
             <Text style={[styles.activeFilterText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-              Showing: {genres[selectedGenreId] || 'Unknown'} movies
+              Showing: {genres[selectedGenreId] || 'Unknown'} {mediaType === 'movie' ? 'movies' : 'TV shows'}
             </Text>
           </View>
         )}
       </View>
       
-      {/* Movie Rankings List */}
+      {/* Movie/TV Show Rankings List */}
       {filteredAndRankedMovies.length > 0 ? (
         <ScrollView style={listStyles.rankingsList}>
           {filteredAndRankedMovies.map((movie, index) => (
@@ -242,7 +256,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
                 </Text>
               </View>
               <Image
-                source={{ uri: getPosterUrl(movie.poster_path) }}
+                source={{ uri: getPosterUrl(movie.poster || movie.poster_path) }}
                 style={listStyles.resultPoster}
                 resizeMode="cover"
               />
@@ -251,15 +265,17 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
                   style={[listStyles.resultTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}
                   numberOfLines={2}
                 >
-                  {movie.title}
+                  {movie.title || movie.name}
                 </Text>
                 <View style={scoreDisplayStyles.scoreContainer}>
                   <Text style={[scoreDisplayStyles.finalScore, { color: isDarkMode ? '#FFD700' : '#4B0082' }]}>
                     {displayRating(movie)}
                   </Text>
                   <Text style={[movieCardStyles.genresText, { color: isDarkMode ? '#D3D3D3' : '#666' }]}>
-  Genres: {movie.genre_ids && Array.isArray(movie.genre_ids) ? movie.genre_ids.map(id => (genres && genres[id]) || 'Unknown').join(', ') : 'Unknown'}
-</Text>
+                    Genres: {movie.genre_ids && Array.isArray(movie.genre_ids) 
+                      ? movie.genre_ids.map(id => (genres && genres[id]) || 'Unknown').join(', ') 
+                      : 'Unknown'}
+                  </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.editButton}
@@ -276,86 +292,181 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
         </ScrollView>
       ) : (
         <View style={stateStyles.emptyStateContainer}>
-          <Ionicons name="search-outline" size={64} color={isDarkMode ? '#D3D3D3' : '#A9A9A9'} />
+          <Ionicons 
+            name="search-outline" 
+            size={64} 
+            color={isDarkMode ? '#D3D3D3' : '#A9A9A9'} 
+          />
           <Text style={{ color: isDarkMode ? '#D3D3D3' : '#666', fontSize: 16, textAlign: 'center', marginTop: 16 }}>
-            No movies found for this genre.
+            No {mediaType === 'movie' ? 'movies' : 'TV shows'} found for this genre.
           </Text>
           <TouchableOpacity
             style={[styles.clearFiltersButton, { backgroundColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
             onPress={clearFilters}
           >
             <Text style={{ color: '#FFFFFF', fontSize: 16 }}>
-              Show All Movies
+              Show All {mediaType === 'movie' ? 'Movies' : 'TV Shows'}
             </Text>
           </TouchableOpacity>
         </View>
       )}
       
-      {/* Rating Edit Modal */}
+      {/* Rating Edit Modal - SIMPLIFIED STRUCTURE */}
       <Modal
         visible={editModalVisible}
-        transparent
-        animationType="slide"
+        transparent={true}
+        animationType="none" // We're using our own animation
         onRequestClose={closeEditModal}
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <View style={styles.modalOverlay}>
-            <Animated.View
-              style={[
-                styles.modalContent, 
-                { 
-                  transform: [{ translateY: slideAnim }], 
-                  backgroundColor: isDarkMode ? '#4B0082' : '#F5F5F5',
-                }
-              ]}
-            >
-              <Text style={[modalStyles.modalTitle, { color: isDarkMode ? '#F5F5F5' : '#333' }]}>
-                Edit Rating for {selectedMovie?.title}
+        <View style={modalStyles.modalOverlay}>
+          <Animated.View
+            style={[
+              modalStyles.modalContent,
+              styles.ratingModalContent,
+              { 
+                transform: [{ translateY: slideAnim }], 
+                backgroundColor: isDarkMode ? '#4B0082' : '#4B0082' 
+              }
+            ]}
+          >
+            {/* Content Container */}
+            <View style={styles.modalContentContainer}>
+              <View style={modalStyles.modalHandle} />
+              
+              {/* Movie/TV Show Info */}
+              <View style={styles.modalMovieInfo}>
+                {/* Always attempt to display poster, with fallback handling in getPosterUrl */}
+                <Image 
+                  source={{ uri: getPosterUrl(selectedMovie?.poster_path || selectedMovie?.poster) }}
+                  style={styles.modalPoster}
+                  resizeMode="cover"
+                />
+                <View style={styles.modalMovieDetails}>
+                  <Text style={[
+                    styles.modalMovieTitle,
+                    { color: isDarkMode ? '#F5F5F5' : '#FFFFFF' }
+                  ]}>
+                    {selectedMovie?.title || selectedMovie?.name}
+                  </Text>
+                  
+                  <View style={styles.genreTextContainer}>
+                    <Text style={[
+                      styles.modalGenres,
+                      { color: isDarkMode ? '#D3D3D3' : '#D3D3D3' }
+                    ]}>
+                      {selectedMovie?.genre_ids?.map(id => genres[id] || '').filter(Boolean).join(', ')}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.ratingDisplay}>
+                    <Ionicons name="star" size={16} color={isDarkMode ? '#FFD700' : '#FFD700'} />
+                    <Text style={{ color: isDarkMode ? '#FFD700' : '#FFD700', marginLeft: 4 }}>
+                      TMDb: {selectedMovie?.score?.toFixed(1) || selectedMovie?.vote_average?.toFixed(1) || '0.0'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Rating input */}
+              <Text style={[
+                styles.ratingLabel,
+                { color: isDarkMode ? '#F5F5F5' : '#FFFFFF', marginTop: 20 }
+              ]}>
+                Your Rating (1.0-10.0):
               </Text>
+              
               <TextInput
                 style={[
                   styles.ratingInput,
                   {
-                    backgroundColor: isDarkMode ? '#1C2526' : '#FFFFFF',
-                    borderColor: isDarkMode ? '#8A2BE2' : '#4B0082',
-                    color: isDarkMode ? '#F5F5F5' : '#333',
-                  },
+                    backgroundColor: isDarkMode ? '#2A1A42' : 'rgba(255,255,255,0.15)',
+                    borderColor: isDarkMode ? '#6C2BD9' : 'rgba(255,255,255,0.3)',
+                    color: isDarkMode ? '#F5F5F5' : '#FFFFFF',
+                    marginTop: 10,
+                    marginBottom: 20,
+                  }
                 ]}
-                value={newRating}
-                onChangeText={setNewRating}
+                value={newRating.toString()}
+                onChangeText={(text) => {
+                  // Handle all basic rating input
+                  if (text === '' || text === '.' || text === '10' || text === '10.0') {
+                    setNewRating(text);
+                  } else {
+                    // Try to parse as a number
+                    const value = parseFloat(text);
+                    
+                    // Check if it's a valid number between 1 and 10
+                    if (!isNaN(value) && value >= 1 && value <= 10) {
+                      // Handle decimal places
+                      if (text.includes('.')) {
+                        const parts = text.split('.');
+                        if (parts[1].length > 1) {
+                          // Too many decimals, limit to one
+                          setNewRating(parts[0] + '.' + parts[1].substring(0, 1));
+                        } else {
+                          // One decimal is fine, keep it
+                          setNewRating(text);
+                        }
+                      } else {
+                        // No decimal, just keep the value
+                        setNewRating(text);
+                      }
+                    }
+                  }
+                }}
                 keyboardType="decimal-pad"
-                placeholder="7.5"
-                maxLength={3}
-                returnKeyType="done"
-                placeholderTextColor={isDarkMode ? '#aaa' : '#999'}
+                placeholder="Enter rating"
+                placeholderTextColor={isDarkMode ? '#9D8AC7' : 'rgba(255,255,255,0.7)'}
+                maxLength={4}
                 autoFocus={true}
+                selectTextOnFocus={true}
+                blurOnSubmit={false}
               />
-              <View style={modalStyles.modalButtons}>
-                <TouchableOpacity
-                  style={[modalStyles.modalButton, { backgroundColor: isDarkMode ? '#FFD700' : '#4B0082' }]}
-                  onPress={updateRating}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ color: isDarkMode ? '#1C2526' : '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
-                    Save
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[modalStyles.modalButton, modalStyles.cancelButton, { borderColor: isDarkMode ? '#8A2BE2' : '#4B0082' }]}
-                  onPress={closeEditModal}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ color: isDarkMode ? '#D3D3D3' : '#666', fontSize: 16, fontWeight: '600' }}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </View>
-        </KeyboardAvoidingView>
+            </View>
+            
+            {/* Modal buttons - Fixed at bottom */}
+            <View style={[
+              styles.fixedButtonsContainer, 
+              { 
+                backgroundColor: isDarkMode ? '#4B0082' : '#4B0082',
+                borderTopColor: 'rgba(255,255,255,0.1)'
+              }
+            ]}>
+              <TouchableOpacity
+                style={[
+                  modalStyles.modalButton,
+                  { backgroundColor: isDarkMode ? '#FFD700' : '#FFD700' }
+                ]}
+                onPress={updateRating}
+              >
+                <Text style={[
+                  modalStyles.modalButtonText,
+                  { color: isDarkMode ? '#1C2526' : '#000000', fontWeight: '600' }
+                ]}>
+                  Submit
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  modalStyles.modalButton,
+                  modalStyles.cancelButton,
+                  { 
+                    borderColor: isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.3)',
+                    backgroundColor: 'transparent' 
+                  }
+                ]}
+                onPress={closeEditModal}
+              >
+                <Text style={[
+                  modalStyles.modalButtonText,
+                  { color: isDarkMode ? '#FFFFFF' : '#FFFFFF' }
+                ]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -363,6 +474,7 @@ function TopRatedScreen({ movies, onUpdateRating, genres, isDarkMode }) {
 
 // Extended styles
 const styles = StyleSheet.create({
+  // Original styles
   editButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -376,40 +488,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    padding: 20,
-    borderRadius: 16,
-    width: '85%',
-    maxHeight: '40%',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  ratingInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 18,
-    width: '100%',
-    marginVertical: 16,
-    textAlign: 'center',
-  },
-  // Genre Filter Styles
   filterSection: {
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 4, 
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   filterHeader: {
     flexDirection: 'row',
@@ -462,6 +545,77 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
+  },
+  
+  // Modal styles from AddMovieScreen - SIMPLIFIED
+  ratingModalContent: {
+    position: 'absolute',
+    maxHeight: 'auto', // Allow natural height
+    width: '90%',
+    marginHorizontal: '5%',
+    borderRadius: 20,
+    overflow: 'hidden',
+    // Position higher to leave room for keyboard
+    top: '10%', 
+    left: 0,
+    right: 0,
+  },
+  modalContentContainer: {
+    padding: 20,
+  },
+  modalMovieInfo: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  modalPoster: {
+    width: 110,
+    height: 165,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  modalMovieDetails: {
+    flex: 1,
+  },
+  modalMovieTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  modalGenres: {
+    fontSize: 16,
+  },
+  genreTextContainer: {
+    marginVertical: 8,
+  },
+  ratingDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  ratingLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  ratingInput: {
+    height: 56,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 24,
+    fontWeight: 'normal',
+    textAlign: 'center',
+    width: '100%',
+    alignSelf: 'center',
+  },
+  fixedButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingTop: 0,
+    borderTopWidth: 1,
   },
 });
 
